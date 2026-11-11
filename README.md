@@ -1,5 +1,7 @@
 # OnCue
 
+![The OnCue popover, with sound and motion meters](site/images/card.png)
+
 A macOS menu bar app that watches through your Mac's camera and microphone and
 records when something happens. Set how much motion or sound it takes, arm it, and it records while
 there's activity.
@@ -22,6 +24,16 @@ features.
 
 The site is at [oncue.jva.lol](https://oncue.jva.lol), built from
 `site/` in this repo.
+
+## Getting it
+
+OnCue is free, and it needs macOS 14 or later. It's signed and notarized by Apple.
+
+Download it from [oncue.jva.lol](https://oncue.jva.lol), or install it with Homebrew:
+
+```bash
+brew install --cask jvalol/tap/oncue
+```
 
 ## Building it yourself
 
