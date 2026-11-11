@@ -3,7 +3,7 @@
 //  OnCue
 //
 //  Created by Jake Van Alstyne on 11/9/26.
-//  Copyright © 2026 Jake Van Alstyne. All rights reserved.
+//  Copyright © 2026 Jake Van Alstyne
 //
 
 #if DEBUG

@@ -44,13 +44,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copyright © 2018-2026 Jake Van Alstyne. All rights reserved."
+            "value" : "Copyright © 2018-2026 Jake Van Alstyne"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Copyright © 2018-2026 Jake Van Alstyne. All rights reserved."
+            "value" : "Copyright © 2018-2026 Jake Van Alstyne"
           }
         }
       }

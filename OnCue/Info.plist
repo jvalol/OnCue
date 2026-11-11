@@ -29,7 +29,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Detects motion in front of the camera and records video when it sees some.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2018-2026 Jake Van Alstyne. All rights reserved.</string>
+	<string>Copyright © 2018-2026 Jake Van Alstyne</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSMicrophoneUsageDescription</key>

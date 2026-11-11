@@ -3,7 +3,7 @@
 //  OnCueTests
 //
 //  Created by Jake Van Alstyne on 10/21/26.
-//  Copyright © 2026 Jake Van Alstyne. All rights reserved.
+//  Copyright © 2026 Jake Van Alstyne
 //
 
 import XCTest

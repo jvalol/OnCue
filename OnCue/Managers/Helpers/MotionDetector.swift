@@ -3,7 +3,7 @@
 //  OnCue
 //
 //  Created by Jake Van Alstyne on 4/10/20.
-//  Copyright © 2020 Jake Van Alstyne. All rights reserved.
+//  Copyright © 2020 Jake Van Alstyne
 //
 
 import Cocoa
