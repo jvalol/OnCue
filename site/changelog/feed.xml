@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>OnCue releases</title>
+		<link>https://oncue.jva.lol/changelog/</link>
+		<atom:link href="https://oncue.jva.lol/changelog/feed.xml" rel="self" type="application/rss+xml" />
+		<description>Every release of OnCue, a free security camera for the Mac you already own.</description>
+		<language>en</language>
+
+		<item>
+			<title>OnCue 4.22</title>
+			<link>https://oncue.jva.lol/changelog/#v4-22</link>
+			<guid isPermaLink="false">oncue-4.22</guid>
+			<pubDate>Wed, 21 Oct 2026 19:30:00 GMT</pubDate>
+			<description>OnCue can be used without seeing it. Every control in the popover and in Preferences now has a name a screen reader can say: the two Trigger boxes say which is sound and which is motion, the sliders and meters say what they measure, and the meters say their level as a percentage. In Preferences each pop-up and field is named by the label beside it, and the schedule's weekday boxes say the whole day. The same names serve Voice Control, Switch Control and the keyboard. The one gap is drawing zones in the preview window, which still takes a mouse; the help says so. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.21</title>
+			<link>https://oncue.jva.lol/changelog/#v4-21</link>
+			<guid isPermaLink="false">oncue-4.21</guid>
+			<pubDate>Mon, 12 Oct 2026 10:35:00 GMT</pubDate>
+			<description>If OnCue is set to arm itself when it opens but not to open at login, a restart leaves it closed and nothing arms. The popover now says so until Open OnCue at Login is turned on, the way it has for the schedule since 4.14. If you installed from this site or through Homebrew before 4.8, this is likely you: the login item didn't survive that update's change of identity, and the box has read off since. The popover keeps its glass but no longer goes white over a light window: it tints itself halfway toward the window colour, so the text reads whatever is behind it. And it closes when a click in it opens the browser or Finder, since what you asked for is what should be in front. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.20</title>
+			<link>https://oncue.jva.lol/changelog/#v4-20</link>
+			<guid isPermaLink="false">oncue-4.20</guid>
+			<pubDate>Fri, 02 Oct 2026 16:15:00 GMT</pubDate>
+			<description>After an update, the popover now says so: a line under the state names the new version and links to the changelog at its entry. It stays until you click it, and the next update replaces it. If you've come from the App Store's 3.0.3, which most of you have, the line says the update was from an older version, since OnCue only started remembering its version with this release; from here on it names them. That first line shows once for everyone, whatever you updated from. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.19</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.19</guid>
+			<pubDate>Fri, 02 Oct 2026 14:45:00 GMT</pubDate>
+			<description>The line under the arm state that counts recent recordings was counting each recording twice since 4.15, once for the movie and once for the still beside it, and calling them half as long as they were. It counts movies now. The App Store listing is kept from the same files as this site, and its pictures are drawn by OnCue itself, so from this release on the store shows the app as it is rather than as it was a few features ago. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.18</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.18</guid>
+			<pubDate>Thu, 01 Oct 2026 16:30:00 GMT</pubDate>
+			<description>With two cameras, a time-lapse now shows both side by side on one timeline: the camera chosen in Settings on the left, the other on the right, each named at the top, the time once in the corner. When one camera wasn't recording at a moment, its half is dark rather than frozen on an old frame, so a dark half means "nothing recorded here", not "nothing moved". One camera still fills the frame, and there's nothing to set: two cameras get side by side. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.17</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.17</guid>
+			<pubDate>Wed, 30 Sep 2026 20:45:00 GMT</pubDate>
+			<description>Make a Time-lapse, in the popover menu, turns the last stretch of being armed into one short movie: each recording's still, then a frame every two seconds of it, in order across both cameras, four frames a second, with the time in the corner and the camera's name when there are two. A thirty-second recording becomes four seconds; a busy afternoon, about a minute. It lands in the recordings folder as "What happened", named for the stretch, opens in Finder when it's done, and is never touched by the size limit. Making it again for the same stretch replaces the last one. Show What Happened and Make a Time-lapse now say which period they mean, right in the menu. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.16</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.16</guid>
+			<pubDate>Sat, 26 Sep 2026 14:00:00 GMT</pubDate>
+			<description>When you disarm, the popover now says what happened while OnCue was armed: how long, how many recordings, and when the first and last were. Click that line, or choose Show What Happened from the menu, and Finder opens with exactly those files selected, oldest first, stills included, so the gallery view walks you through it. The line stays until the next stretch of being armed ends, and a stretch shorter than ten minutes with nothing recorded doesn't replace it. Two small ones around Open OnCue at Login: turning it on in Settings now clears the restart warning in an open popover straight away, and the note under the schedule stops asking for it once it's on. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.15</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.15</guid>
+			<pubDate>Sat, 26 Sep 2026 00:30:00 GMT</pubDate>
+			<description>Every recording now comes with a still: a JPEG under the same name, taken at the moment the recording was triggered. Finder's gallery view turns the folder into a contact sheet, Quick Look shows what each recording caught without opening it, and the still is the file to send when someone asks what happened. The size limit counts stills too, and a still goes when its recording goes, never on its own. The warning that a schedule can't survive a restart now says why: nothing opens OnCue after a restart while Open OnCue at Login is off, so the schedule has nothing to arm. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.14</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.14</guid>
+			<pubDate>Thu, 24 Sep 2026 15:30:00 GMT</pubDate>
+			<description>A schedule only runs while OnCue is open, and until now the only place that said so was a grey note under the schedule in Settings. Now, when a schedule is on and Open OnCue at Login is off, that note turns into a warning and the popover says the same: the schedule can't arm OnCue after a restart. Turn Open OnCue at Login on and both go away, no relaunch needed. A schedule with no windows doesn't warn, since nothing is coming. The unarmed state was drawn in white, which disappeared on a light popover. It uses the label colour now, so it reads in light mode and dark mode alike. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.13</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.13</guid>
+			<pubDate>Thu, 24 Sep 2026 01:00:00 GMT</pubDate>
+			<description>OnCue works with Shortcuts, Siri and Focus. There are four actions: Arm OnCue, Disarm OnCue, Is OnCue Armed, and Record a Test. And there's a Focus Filter: add it to a Focus in System Settings, turn on its one switch, and OnCue arms itself whenever that Focus is on and disarms when it ends. Because a Focus follows you across your devices, an Away Focus that your iPhone turns on when you leave home arms the Mac before you're down the street. Nothing is sent anywhere; the Focus is Apple's, and OnCue still has no network permission. A Focus only disarms what it armed. It can only arm OnCue while OnCue is open, so turn on Open OnCue at Login with it. If OnCue quits unexpectedly while armed, the next launch says so, names the time, and arms again. Record a Test, in the menu, records on every camera the way a trigger would, shows you the file, and puts things back how they were. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.12</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.12</guid>
+			<pubDate>Wed, 23 Sep 2026 20:00:00 GMT</pubDate>
+			<description>A schedule set that can't be relied on and silently doesn't work when that's you expect it to happen is worse than an error, now setting a schedule keeps the Mac awake the whole time it's on, days without a window included. Before this, OnCue held off sleep only while armed, so a Mac that slept between windows couldn't notice the next one start; a weekday schedule missed Monday morning unless someone woke the Mac first. Nothing an app can do wakes a sleeping Mac, so it doesn't let it sleep. Between windows the popover says when the next one starts. The line under the arm state that counts recent recordings now says outright when they're barely longer than the shortest OnCue can make. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.11</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.11</guid>
+			<pubDate>Wed, 23 Sep 2026 07:15:00 GMT</pubDate>
+			<description>OnCue is now translated into German. On a Mac set to German, the popover, Preferences, the preview window, the notifications and the camera and microphone prompts are all in German. It follows the system language, so there's nothing to set, and on any other Mac nothing changes. Recordings are still named the same way everywhere. German is the one other language I can read myself; more will come as people ask for them. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.10</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.10</guid>
+			<pubDate>Wed, 23 Sep 2026 06:30:00 GMT</pubDate>
+			<description>You can now set regions in the preview window for areas that matter. In the window, drag a rectangle around the part of the picture that matters, the door rather than the whole room, and motion outside it isn't counted. Draw as many as you need, click one to select it, drag it to move it, press Delete to remove it, or clear them all with the button. The rest of the picture is dimmed so you can see what's being ignored, and movement there still shows; it just doesn't start a recording. Each camera has its own zones, and recordings are still the whole frame. The preview shows movement as a red tint over the picture now, instead of painting it solid red, so you can see what's actually moving. Detection is unchanged. OnCue also skips the preview picture entirely while nothing is showing it, and the preview window no longer opens with black bars above and below the picture when OnCue is already armed. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+		<item>
+			<title>OnCue 4.9</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.9</guid>
+			<pubDate>Wed, 23 Sep 2026 01:45:00 GMT</pubDate>
+			<description>OnCue can arm itself on a schedule. Set the hours and days in Preferences, as many rows as you need: weekdays nine to five and Saturday mornings are two rows, and a window can run past midnight. It arms at the start with the same countdown and notification as arming at login, disarms at the end, and if you disarm it yourself during a window it stays disarmed until the next one starts. Anything you arm by hand is left alone. The schedule only runs while OnCue is open, so turn on Open OnCue at Login with it. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.8.1</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.8.1</guid>
+			<pubDate>Tue, 22 Sep 2026 22:00:00 GMT</pubDate>
+			<description>The line that counts recent recordings and the notice line under the arm state were drawn on top of each other whenever both had something to say, which on a laptop on battery is most of the time. They stack now, and the popover no longer has spare room under the button. The bug is from 4.7; today was the first time anyone saw both lines at once. I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.8</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.8</guid>
+			<pubDate>Tue, 22 Sep 2026 18:00:00 GMT</pubDate>
+			<description>Read this one before you update. OnCue is on the Mac App Store again with this release, and to make that work it had to change its identity under the hood. macOS treats the updated app as new, so after this update: OnCue will not open at login until you turn that back on, and the old entry has to go first. Open System Settings, General, Login Items, remove the OnCue row that's there, then in OnCue's Preferences tick Open OnCue at Login again. Arm at login, your recordings folder, your thresholds and the size limit are back at their defaults too, so go through Preferences once. Your recordings are exactly where they were. macOS will ask about the camera and microphone again the first time you arm. I'm sorry about all of it; it happens once. OnCue now says when it's starting with default settings, in the popover, until you've opened Preferences or armed it. Recordings are named from the footage's own clock rather than the Mac's.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.7.1</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.7.1</guid>
+			<pubDate>Tue, 22 Sep 2026 00:05:00 GMT</pubDate>
+			<description>Settings is honest about the recordings folder now. It would let you choose a folder OnCue can't write to, a Time Machine disk being the one that caught me, and say nothing until recordings started failing while I was away. It checks when you choose, and won't take one it can't use. It also kept naming a drive after I ejected it, even after closing and reopening Settings, while recordings were quietly going to your Movies folder instead. It now tells you where they're actually going, names the folder you chose when that isn't available, and says when the folder is there but can't be written to.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.7</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.7</guid>
+			<pubDate>Mon, 21 Sep 2026 23:00:00 GMT</pubDate>
+			<description>If you keep recordings on an external drive, this release makes OnCue work for you at all. It was asking macOS how much room was left and getting back zero from any drive that isn't the built-in one, so it refused to record and told you the disk was full. It never even tried to write. Nothing you did caused it and nothing on your drive was wrong. 100% a bug now fixed. The size limit now applies while a recording is running, not just between recordings. A recording keeps going for as long as something keeps moving, so one of them could run all night and take the folder well past a limit you'd set. Now it carries on in a new file instead, picking up exactly where the last one left off, and the one that closed can be cleared like any other. Running out of space ends the recording cleanly and says so, rather than writing until it fails and losing the end of it. The popover also tells you how many recordings the last 24 hours produced and how long they typically run. The shortest OnCue makes by default is 10s. The maximum is 630s. Anything between is configurable.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.6</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.6</guid>
+			<pubDate>Mon, 21 Sep 2026 20:00:00 GMT</pubDate>
+			<description>OnCue now says when it has stopped watching for motion. Detection could fail while everything looks healthy, camera running, etc, and yet nothing records. It could be for a variety of reasons, but without any kind of indication the point of a security system is flawed if it's giving false positive signals about its readiness. The popover says as much, that camera's meter greys out, and Arm is unavailable while motion is the only thing set to trigger. If it recovers, OnCue tells you how long it missed. Sound carries on watching throughout, and an OnCue that's already armed stays armed.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.5.2</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.5.2</guid>
+			<pubDate>Mon, 21 Sep 2026 19:00:00 GMT</pubDate>
+			<description>Fixes for things that could go wrong while nobody was watching. Unplug the drive you record to and OnCue goes back to your Movies folder for the next recording, rather than failing until you restart it. New recordings are readable only by you, and a folder OnCue makes for itself is private, which matters if you keep recordings somewhere shared. The size limit only deletes files now: a folder that happened to be named like a recording could have gone with everything inside it.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.5.1</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.5.1</guid>
+			<pubDate>Mon, 21 Sep 2026 18:30:00 GMT</pubDate>
+			<description>A fix for anyone installing OnCue for the first time. Until now, the recordings from that first session went into your Movies folder rather than the OnCue folder inside it, so Show Recordings opened an empty folder and the size limit had nothing to count. They go to the right place now, and any that landed loose are still in Movies where you left them.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.5</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.5</guid>
+			<pubDate>Mon, 21 Sep 2026 17:00:00 GMT</pubDate>
+			<description>OnCue won't fill your disk any more. It stops before the last of the space is gone and says so, rather than recording into a full disk and failing. If you'd rather it kept going, Settings takes a number of GB to keep, and OnCue deletes its own oldest recordings to stay under it. That's off unless you set it, it never touches a file OnCue didn't write, and renaming a recording keeps it for good.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.4</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.4</guid>
+			<pubDate>Sun, 20 Sep 2026 23:00:00 GMT</pubDate>
+			<description>Settings can be set to no microphone, so OnCue watches without listening. Recording a room is one thing and recording what's said in it is another, and until now the second was only avoidable by unplugging something. Choosing no microphone, or no camera, also switches off the trigger that depended on it, rather than leaving a tick behind for a device you just removed.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.3</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.3</guid>
+			<pubDate>Sun, 20 Sep 2026 22:00:00 GMT</pubDate>
+			<description>A recording that can't be saved now says so, instead of failing quietly while OnCue carried on looking like it was working. The menu bar icon turns yellow and the popover says why: no room left, the folder gone, or OnCue not allowed to write there. It stays until you disarm, so it's still there when you come back, and it says how many recordings in a row have gone the same way. OnCue keeps watching either way.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.2</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.2</guid>
+			<pubDate>Sun, 20 Sep 2026 12:00:00 GMT</pubDate>
+			<description>The meters now colour themselves against your own trigger rather than a fixed level: green while what they're picking up wouldn't start a recording, yellow as it gets close, red once it would. Before this, a meter could sit red while nothing was going to happen, or stay green with a recording about to start. And if a recording loses frames, its name says how many seconds are missing, so a thin file can't quietly pass for a complete one.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.1</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.1</guid>
+			<pubDate>Sun, 20 Sep 2026 06:00:00 GMT</pubDate>
+			<description>OnCue only holds the camera while it's actually watching now. Unarmed with nothing open, the camera is off and its light in the menu bar is out, so a lit camera means OnCue is watching rather than just running. If macOS is lighting your screen to brighten what the camera sees, OnCue says so, since that lights the room it's meant to be quietly watching and OnCue can't switch it off itself. Settings says which picker is which, and you can now choose no camera at all and let sound do the watching.</description>
+		</item>
+
+		<item>
+			<title>OnCue 4.0</title>
+			<link>https://oncue.jva.lol/changelog/</link>
+			<guid isPermaLink="false">oncue-4.0</guid>
+			<pubDate>Sat, 19 Sep 2026 12:00:00 GMT</pubDate>
+			<description>The first release in a long time, and most of OnCue was new. Sound can set off a recording, on its own or alongside motion, and each trigger has its own meter and threshold. Two cameras can watch at once, each recording its own file. Every recording reaches back a few seconds before whatever started it, so the thing you wanted to see isn't already over. Recordings are named for when they started and what recorded them, and they go wherever you point them. OnCue keeps your Mac awake while it's armed, says something when closing the lid would stop it, and can open and arm itself after a restart.</description>
+		</item>
+	</channel>
+</rss>

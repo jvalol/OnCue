@@ -1,0 +1,70 @@
+#!/bin/sh
+# Asks what the world can actually install, and whether the two halves agree: the cask published
+# in the tap on GitHub, and the zip published on the site. Run it after pushing both.
+#
+# scripts/release keeps the cask correct on disk, which is a different thing from correct on
+# GitHub. brew reads the tap over the network, so a cask written and never pushed leaves every
+# brew user on the old version while nothing in either checkout looks wrong. That failure is
+# invisible from here, and this is the only check that can see it, because it is the only one
+# that asks the published copies rather than the working tree.
+#
+# The tap is read over git and the zip over https, which is how brew gets each of them.
+set -u
+cd "$(dirname "$0")/.." || exit 2
+
+# Read over git, because that is how brew reads a tap: `brew tap` clones it and `brew update`
+# fetches it. raw.githubusercontent.com is a CDN with a five minute cache, so asking it straight
+# after pushing reports the old version when nothing is wrong, which is exactly when this gets run.
+TAP_REMOTE="${ONCUE_TAP_REMOTE:-https://github.com/jvalol/homebrew-tap.git}"
+TAP_BRANCH="${ONCUE_TAP_BRANCH:-main}"
+
+fail() { echo "check-tap: $*" >&2; exit 1; }
+
+# What this repo believes the current release is. The release script already refuses to ship
+# unless this line and the download link name the same version, so either will do.
+version="${1:-}"
+[ -n "$version" ] ||
+  version=$(sed -n 's/.*downloads\/OnCue-\([0-9][0-9.]*\)\.zip.*/\1/p' site/index.html | head -1)
+[ -n "$version" ] || fail "couldn't tell which version to check. Pass it as an argument"
+
+work=$(mktemp -d) || fail "couldn't make a work directory"
+trap 'rm -rf "$work"' EXIT
+
+# --- What the tap serves ------------------------------------------------------------------------
+
+git clone --quiet --depth 1 --branch "$TAP_BRANCH" "$TAP_REMOTE" "$work/tap" 2>/dev/null ||
+  fail "couldn't clone the tap from $TAP_REMOTE"
+
+cask="$work/tap/Casks/oncue.rb"
+[ -f "$cask" ] || fail "the tap at $TAP_REMOTE has no Casks/oncue.rb"
+tap_commit=$(git -C "$work/tap" rev-parse --short HEAD)
+
+published=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$cask" | head -1)
+cask_sha=$(sed -n 's/^  sha256 "\(.*\)"$/\1/p' "$cask" | head -1)
+[ -n "$published" ] || fail "the published cask has no version line"
+[ -n "$cask_sha" ] || fail "the published cask has no sha256 line"
+
+[ "$published" = "$version" ] ||
+  fail "this repo is on $version and the published cask is still on $published.
+  The cask was written but not pushed. Commit and push it from ${ONCUE_TAP:-../homebrew-tap}"
+
+# --- What the site serves, at the address the cask sends people to --------------------------------
+
+url=$(sed -n 's/^  url "\(.*\)"$/\1/p' "$cask" | head -1)
+[ -n "$url" ] || fail "the published cask has no url line"
+url=$(printf '%s' "$url" | sed "s/#{version}/$published/")
+
+# The user-agent keeps this fetch out of the site's download counts (spec 0052).
+curl -fsSL -A oncue-check-tap "$url" -o "$work/release.zip" 2>/dev/null ||
+  fail "the cask sends people to $url and nothing is served there.
+  The site hasn't deployed this release yet, so brew installs would fail"
+
+served=$(shasum -a 256 "$work/release.zip" | cut -d' ' -f1)
+[ "$served" = "$cask_sha" ] ||
+  fail "the cask pins $cask_sha but $url serves $served.
+  brew refuses a hash mismatch, so this cask cannot install"
+
+echo "check-tap: $version is installable"
+echo "  cask from $TAP_REMOTE at $tap_commit"
+echo "  zip served at  $url"
+echo "  sha256 $served, and the cask agrees"

@@ -1,0 +1,11 @@
+# Copy that ships with Jake's name on it, for ~/.claude/voice/check-voice: the site's pages, the
+# store's texts and the README. Not the changelog or its feed, which ship Claude's wording as
+# drafted with the disclosure line (CLAUDE.md), and not the app's strings, which stay under the
+# [COPY - Jake] marker alone: hashing a source file would want a signature on every code change.
+README.md
+site/index.html
+site/help/index.html
+site/privacy/index.html
+site/check/index.html
+site/mac-security-camera/index.html
+site/store/*.txt

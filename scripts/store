@@ -1,0 +1,891 @@
+#!/usr/bin/env python3
+"""The App Store listing follows each release from the repo (spec 0057).
+
+    scripts/store <version> [--dry-run]   create or reuse the store version, attach the build,
+                                          send What's New, the listing, the screenshots and the preview, submit
+    scripts/store --screenshots           render the pictures through a Debug build into site/store
+    scripts/store --preview               render the preview clip the same way (spec 0061)
+    scripts/store --card                  cut the site's link card from the armed picture (--screenshots does too)
+    scripts/store --pull-listing          write the live listing's texts into site/store
+    scripts/store --self-test             the pure parts' tests, run by scripts/check
+
+The token is an ES256 JWT signed with openssl from ASC_KEY, ASC_KEY_ID and ASC_ISSUER, the three
+the release script reads. Nothing else is needed beyond macOS's Python.
+"""
+import base64
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import struct
+import unittest
+import urllib.error
+import urllib.request
+import zipfile
+from html.parser import HTMLParser
+from pathlib import Path
+
+APP_ID = "474607978"
+PLATFORM = "MAC_OS"
+LOCALE = "en-US"
+API = "https://api.appstoreconnect.apple.com/v1"
+REPO = Path(__file__).resolve().parent.parent
+STORE_DIR = REPO / "site" / "store"
+SCREENSHOTS_DIR = STORE_DIR / "screenshots"
+PREVIEW_DIR = STORE_DIR / "preview"
+PREVIEW_NAME = "oncue-preview-1920x1080.mov"
+# Apple's bounds for a Mac app preview (spec 0061): the size the store page accepts, the length it
+# allows, and no sound, since the clip carries captions and most people see previews muted.
+PREVIEW_SIZE = (1920, 1080)
+PREVIEW_SECONDS = (15, 30)
+# The picture a link to the site unfurls with (the pages' og:image). Cut from a store picture so it
+# is drawn by the app like they are: the armed popover, since that is what OnCue looks like at work.
+CARD = REPO / "site" / "images" / "card.png"
+CARD_SOURCE = "3-popover-armed"
+CARD_SIZE = (1200, 630)
+CHANGELOG = REPO / "site" / "changelog" / "index.html"
+DISCLOSURE = "I asked AI to draft this entry for me"
+WHATS_NEW_LIMIT = 4000
+# The subtitle is the one indexed field besides the name and keywords; Apple caps it here.
+SUBTITLE_LIMIT = 30
+
+# The review slot: one version at a time. These states hold it.
+IN_THE_SLOT = {"WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_DEVELOPER_RELEASE", "PENDING_APPLE_RELEASE",
+               "WAITING_FOR_EXPORT_COMPLIANCE", "PROCESSING_FOR_APP_STORE"}
+# A version in these states for the same string is edited rather than created again.
+REUSABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED", "INVALID_BINARY"}
+LIVE = {"READY_FOR_SALE", "READY_FOR_DISTRIBUTION"}
+
+
+# --- Pure parts ---------------------------------------------------------------------------------
+
+def version_key(version):
+    """4.10 sorts after 4.9: compare as numbers, not as text."""
+    return tuple(int(part) for part in re.findall(r"\d+", version))
+
+
+class _ChangelogParser(HTMLParser):
+    """Each <h3> heading starts an entry; its <p> paragraphs follow until the next heading.
+    Paragraphs with the release-meta class carry the date and the disclosure, not the news."""
+
+    def __init__(self):
+        super().__init__()
+        self.entries = {}
+        self.ids = {}
+        self._version = None
+        self._in_heading = False
+        self._paragraph = None
+        self._meta = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "h3":
+            self._in_heading = True
+            self._heading_id = attrs.get("id")
+        elif tag == "p" and self._version:
+            self._paragraph = []
+            self._meta = "release-meta" in (attrs.get("class") or "")
+
+    def handle_endtag(self, tag):
+        if tag == "h3":
+            self._in_heading = False
+        elif tag == "p" and self._paragraph is not None:
+            text = " ".join("".join(self._paragraph).split())
+            if text and not self._meta and DISCLOSURE not in text:
+                self.entries[self._version].append(text)
+            self._paragraph = None
+
+    def handle_data(self, data):
+        if self._in_heading:
+            version = data.strip()
+            if re.fullmatch(r"\d+(\.\d+)+", version):
+                self._version = version
+                self.entries.setdefault(version, [])
+                self.ids[version] = self._heading_id
+            else:
+                self._version = None
+        elif self._paragraph is not None:
+            self._paragraph.append(data)
+
+
+def changelog_entries(html):
+    """{version: [paragraph, ...]} for every versioned heading in the changelog."""
+    parser = _ChangelogParser()
+    parser.feed(html)
+    return parser.entries
+
+
+def changelog_anchor_problems(html):
+    """Headings whose id isn't the one the app links to (spec 0058): "v4-19" for 4.19."""
+    parser = _ChangelogParser()
+    parser.feed(html)
+    return [v for v, i in parser.ids.items() if i != "v" + v.replace(".", "-")]
+
+
+def whats_new(entries, live_version, version):
+    """Every entry newer than what the store sells, up to and including this version, oldest
+    first, paragraphs joined by blank lines. A skipped version's entry is carried along."""
+    chosen = [v for v in entries if version_key(live_version) < version_key(v) <= version_key(version)]
+    chosen.sort(key=version_key)
+    if version not in chosen:
+        raise SystemExit(f"store: the changelog has no entry for {version}")
+    text = "\n\n".join("\n\n".join(entries[v]) for v in chosen if entries[v])
+    if len(text) > WHATS_NEW_LIMIT:
+        raise SystemExit(f"store: What's New is {len(text)} characters; the store takes {WHATS_NEW_LIMIT}")
+    return text
+
+
+def slot_decision(versions, version):
+    """What to do given the store's versions, each {versionString, appStoreState, id}:
+    ('selling', id) when this version is already live, ('blocked', other) when another version
+    holds the review slot, ('reuse', id) for an editable version with this string, or
+    ('create', None)."""
+    for v in versions:
+        if v["versionString"] == version and v["appStoreState"] in LIVE:
+            return ("selling", v["id"])
+    for v in versions:
+        if v["versionString"] != version and v["appStoreState"] in IN_THE_SLOT:
+            return ("blocked", v["versionString"])
+    for v in versions:
+        if v["versionString"] == version and v["appStoreState"] in IN_THE_SLOT:
+            return ("blocked", version)
+    for v in versions:
+        if v["versionString"] == version and v["appStoreState"] in REUSABLE:
+            return ("reuse", v["id"])
+    return ("create", None)
+
+
+def live_version(versions):
+    live = [v["versionString"] for v in versions if v["appStoreState"] in LIVE]
+    return max(live, key=version_key) if live else None
+
+
+MAC_IN_A_NAME = re.compile(r"\b(for|on the) Mac\b|\bMac app\b|\bOnCue Mac\b")
+
+
+def names_the_mac(text):
+    """5.2.5: Apple's marks can't be part of the app's name. Body copy may say Mac; a phrase
+    that reads as a product name may not. Returns the offending phrase or None."""
+    match = MAC_IN_A_NAME.search(text or "")
+    return match.group(0) if match else None
+
+
+def screenshot_plan(local, remote):
+    """local: [(name, checksum)] in order; remote: [{id, fileName, sourceFileChecksum}].
+    Returns (to_upload names, to_delete ids, final order of names)."""
+    remote_by_name = {r["fileName"]: r for r in remote}
+    local_names = {name for name, _ in local}
+    upload = [name for name, checksum in local
+              if name not in remote_by_name or remote_by_name[name].get("sourceFileChecksum") != checksum]
+    delete = [r["id"] for r in remote if r["fileName"] not in local_names or r["fileName"] in upload]
+    return upload, delete, [name for name, _ in local]
+
+
+def listing_changes(local, remote):
+    """Which of description, keywords and promotionalText differ from the store's."""
+    return {key: value for key, value in local.items() if (value or "") != (remote.get(key) or "")}
+
+
+def subtitle_problem(text):
+    """Why the subtitle can't go up as written, or None. It's the field the 4.9 rejection was
+    about, so it gets the Mac check as well as the length."""
+    if len(text) > SUBTITLE_LIMIT:
+        return f"the subtitle is {len(text)} characters; the store takes {SUBTITLE_LIMIT}"
+    phrase = names_the_mac(text)
+    if phrase:
+        return f"the subtitle says \"{phrase}\", which App Review reads as Apple's mark in a name (5.2.5)"
+    return None
+
+
+def subtitle_change(local, remote):
+    """The subtitle to send, or None when the store already has it or the file is empty: an
+    empty file means leave the store's alone, since a blank subtitle is never what's wanted."""
+    return local if local and local != (remote or "") else None
+
+
+def probe_movie(path):
+    """Width, height, seconds, codecs and audio track count of a QuickTime movie, read from its
+    atoms. Spotlight's mdls answers (null) for a file it hasn't indexed, which is every file a
+    render just wrote, so this reads the headers itself."""
+    data = Path(path).read_bytes()
+    info = {"width": None, "height": None, "seconds": None, "codecs": [], "audio_tracks": 0}
+
+    def walk(start, end):
+        i = start
+        while i + 8 <= end:
+            size, kind = struct.unpack(">I4s", data[i:i + 8])
+            kind = kind.decode("latin1")
+            header = 8
+            if size == 1:
+                size = struct.unpack(">Q", data[i + 8:i + 16])[0]
+                header = 16
+            elif size == 0:
+                size = end - i
+            if size < header:
+                return
+            body = i + header
+            if kind in ("moov", "trak", "mdia", "minf", "stbl"):
+                walk(body, i + size)
+            elif kind == "mvhd":
+                if data[body] == 1:
+                    timescale, duration = struct.unpack(">IQ", data[body + 20:body + 32])
+                else:
+                    timescale, duration = struct.unpack(">II", data[body + 12:body + 20])
+                info["seconds"] = duration / timescale if timescale else None
+            elif kind == "tkhd":
+                offset = body + (88 if data[body] == 1 else 76)
+                width, height = struct.unpack(">II", data[offset:offset + 8])
+                if width and height:
+                    info["width"], info["height"] = width // 65536, height // 65536
+            elif kind == "hdlr":
+                if data[body + 8:body + 12] == b"soun":
+                    info["audio_tracks"] += 1
+            elif kind == "stsd":
+                count = struct.unpack(">I", data[body + 4:body + 8])[0]
+                j = body + 8
+                for _ in range(count):
+                    entry = struct.unpack(">I", data[j:j + 4])[0]
+                    info["codecs"].append(data[j + 4:j + 8].decode("latin1"))
+                    j += entry
+            i += size
+
+    walk(0, len(data))
+    return info
+
+
+def preview_problems(info):
+    """Why the store would refuse the clip, as a list; empty when it's acceptable."""
+    problems = []
+    if (info["width"], info["height"]) != PREVIEW_SIZE:
+        problems.append(f"the preview is {info['width']}x{info['height']}; the store takes {PREVIEW_SIZE[0]}x{PREVIEW_SIZE[1]}")
+    seconds = info["seconds"]
+    if seconds is None or not PREVIEW_SECONDS[0] <= seconds <= PREVIEW_SECONDS[1]:
+        problems.append(f"the preview is {seconds} seconds; the store takes {PREVIEW_SECONDS[0]} to {PREVIEW_SECONDS[1]}")
+    if "avc1" not in info["codecs"]:
+        problems.append(f"the preview's codecs are {info['codecs']}; the store wants H.264 (avc1)")
+    if info["audio_tracks"]:
+        problems.append("the preview has an audio track; it should have none")
+    return problems
+
+
+# --- The API --------------------------------------------------------------------------------------
+
+def token():
+    key = os.path.expanduser(os.environ.get("ASC_KEY", ""))
+    key_id = os.environ.get("ASC_KEY_ID")
+    issuer = os.environ.get("ASC_ISSUER")
+    if not (key and os.path.isfile(key) and key_id and issuer):
+        raise SystemExit("store: ASC_KEY (a file), ASC_KEY_ID and ASC_ISSUER are needed; see the top of scripts/release")
+    b64 = lambda b: base64.urlsafe_b64encode(b).rstrip(b"=").decode()
+    header = b64(json.dumps({"alg": "ES256", "kid": key_id, "typ": "JWT"}).encode())
+    now = int(time.time())
+    payload = b64(json.dumps({"iss": issuer, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"}).encode())
+    message = f"{header}.{payload}".encode()
+    der = subprocess.run(["openssl", "dgst", "-sha256", "-sign", key], input=message, capture_output=True, check=True).stdout
+    # DER SEQUENCE { INTEGER r, INTEGER s } to the raw r||s the JWT wants.
+    i = 2
+    length = der[i + 1]; r = der[i + 2:i + 2 + length]; i = i + 2 + length
+    length = der[i + 1]; s = der[i + 2:i + 2 + length]
+    raw = r[-32:].rjust(32, b"\0") + s[-32:].rjust(32, b"\0")
+    return f"{header}.{payload}.{b64(raw)}"
+
+
+class Client:
+    def __init__(self, dry_run=False):
+        self.dry_run = dry_run
+        self._token = None
+
+    def _headers(self):
+        if self._token is None:
+            self._token = token()
+        return {"Authorization": f"Bearer {self._token}", "Content-Type": "application/json"}
+
+    def call(self, method, path, body=None, raw_url=None):
+        url = raw_url or (API + path)
+        data = json.dumps(body).encode() if body is not None else None
+        if self.dry_run and method != "GET":
+            print(f"  would {method} {path}" + (f"\n    {json.dumps(body)[:600]}" if body else ""))
+            return {"data": {"id": "dry-run", "attributes": {}}}
+        request = urllib.request.Request(url, data=data, method=method, headers=self._headers())
+        try:
+            with urllib.request.urlopen(request) as response:
+                text = response.read()
+                return json.loads(text) if text else {}
+        except urllib.error.HTTPError as error:
+            raise SystemExit(f"store: {method} {path} answered {error.code}: {error.read().decode()[:800]}")
+
+    def get(self, path):
+        return self.call("GET", path)
+
+    def get_all(self, path):
+        items, url = [], API + path
+        while url:
+            page = self.call("GET", "", raw_url=url)
+            items.extend(page.get("data", []))
+            url = page.get("links", {}).get("next")
+        return items
+
+
+# --- The listing --------------------------------------------------------------------------------
+
+def read_listing():
+    files = {"description": "description.txt", "keywords": "keywords.txt", "promotionalText": "promotional-text.txt"}
+    listing = {}
+    for key, name in files.items():
+        path = STORE_DIR / name
+        listing[key] = path.read_text().strip() if path.exists() else ""
+    return listing
+
+
+def read_subtitle():
+    path = STORE_DIR / "subtitle.txt"
+    return path.read_text().strip() if path.exists() else ""
+
+
+def read_review_note():
+    path = STORE_DIR / "review-note.txt"
+    return path.read_text().strip() if path.exists() else ""
+
+
+def local_screenshots():
+    if not SCREENSHOTS_DIR.is_dir():
+        return []
+    files = sorted(p for p in SCREENSHOTS_DIR.iterdir() if p.suffix.lower() == ".png")
+    return [(p.name, hashlib.md5(p.read_bytes()).hexdigest()) for p in files]
+
+
+def local_preview():
+    """[(name, checksum)] for the one clip, or [] when there isn't one."""
+    path = PREVIEW_DIR / PREVIEW_NAME
+    return [(PREVIEW_NAME, hashlib.md5(path.read_bytes()).hexdigest())] if path.exists() else []
+
+
+def build_number_in_zip(version):
+    zip_path = REPO / "site" / "downloads" / f"OnCue-{version}.zip"
+    if not zip_path.exists():
+        raise SystemExit(f"store: {zip_path.name} isn't in site/downloads, so {version} never shipped here")
+    with zipfile.ZipFile(zip_path) as archive:
+        plist = archive.read("OnCue.app/Contents/Info.plist")
+    match = re.search(rb"<key>CFBundleVersion</key>\s*<string>(\d+)</string>", plist)
+    if not match:
+        raise SystemExit("store: couldn't read CFBundleVersion from the zip")
+    return match.group(1).decode()
+
+
+# --- Commands -----------------------------------------------------------------------------------
+
+def wait_for_build(client, build_number, minutes=40):
+    deadline = time.time() + minutes * 60
+    while True:
+        builds = client.get(f"/builds?filter[app]={APP_ID}&filter[version]={build_number}"
+                            f"&filter[preReleaseVersion.platform]={PLATFORM}&fields[builds]=version,processingState,expired").get("data", [])
+        valid = [b for b in builds if b["attributes"]["processingState"] == "VALID" and not b["attributes"]["expired"]]
+        if valid:
+            return valid[0]["id"]
+        uploads = client.get(f"/apps/{APP_ID}/buildUploads?filter[cfBundleVersion]={build_number}&filter[platform]={PLATFORM}").get("data", [])
+        states = [u["attributes"]["state"]["state"] for u in uploads]
+        if not uploads and not builds:
+            raise SystemExit(f"store: no build {build_number} was uploaded. Run the release with APP_STORE=upload, "
+                             f"or STORE_FROM_ARCHIVE=1 APP_STORE=upload scripts/release")
+        if any(s not in ("PROCESSING", "AWAITING_UPLOAD", "COMPLETE") for s in states):
+            raise SystemExit(f"store: build {build_number} is in state {states}; look in App Store Connect")
+        if time.time() > deadline:
+            raise SystemExit(f"store: build {build_number} still processing after {minutes} minutes")
+        print(f"store: build {build_number} is still processing; waiting")
+        time.sleep(30)
+
+
+def store_versions(client):
+    data = client.get_all(f"/apps/{APP_ID}/appStoreVersions?filter[platform]={PLATFORM}&limit=20"
+                          f"&fields[appStoreVersions]=versionString,appStoreState,releaseType")
+    return [{"id": v["id"], "versionString": v["attributes"]["versionString"], "appStoreState": v["attributes"]["appStoreState"]} for v in data]
+
+
+def localization(client, version_id):
+    if version_id == "dry-run":
+        return {"id": "dry-run", "attributes": {}}
+    data = client.get(f"/appStoreVersions/{version_id}/appStoreVersionLocalizations").get("data", [])
+    for loc in data:
+        if loc["attributes"]["locale"] == LOCALE:
+            return loc
+    created = client.call("POST", "/appStoreVersionLocalizations", {"data": {
+        "type": "appStoreVersionLocalizations", "attributes": {"locale": LOCALE},
+        "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}})
+    return created["data"]
+
+
+def app_infos(client):
+    """The app's info records: one live, and one in preparation while a version is in flight."""
+    return client.get(f"/apps/{APP_ID}/appInfos").get("data", [])
+
+
+def app_info_state(info):
+    return info["attributes"].get("state") or info["attributes"].get("appStoreState")
+
+
+def app_info_localization(client, info_id):
+    for loc in client.get(f"/appInfos/{info_id}/appInfoLocalizations").get("data", []):
+        if loc["attributes"]["locale"] == LOCALE:
+            return loc
+    return None
+
+
+def sync_subtitle(client, dry_run):
+    """The subtitle lives on the app info, not the version, and a version that's waiting for
+    review locks it; it has to be set on the in-flight record before submission (2026-10-12,
+    when 4.21 went up without it and had to be pulled). A dry run has no in-flight record to
+    read when the version doesn't exist yet, so it compares against the live one."""
+    local = read_subtitle()
+    if not local:
+        print("store: no subtitle.txt; the store's subtitle stays")
+        return
+    problem = subtitle_problem(local)
+    if problem:
+        raise SystemExit(f"store: {problem}")
+    infos = app_infos(client)
+    editable = [i for i in infos if app_info_state(i) not in LIVE]
+    live = [i for i in infos if app_info_state(i) in LIVE]
+    target = editable[0] if editable else (live[0] if dry_run and live else None)
+    if target is None:
+        raise SystemExit("store: no app info record is editable; the subtitle can't be set")
+    loc = app_info_localization(client, target["id"])
+    if loc is None:
+        raise SystemExit(f"store: the app info has no {LOCALE} localization to carry the subtitle")
+    change = subtitle_change(local, loc["attributes"].get("subtitle"))
+    if change is None:
+        print("store: subtitle unchanged")
+        return
+    client.call("PATCH", f"/appInfoLocalizations/{loc['id']}", {"data": {
+        "type": "appInfoLocalizations", "id": loc["id"], "attributes": {"subtitle": change}}})
+    print(f"store: subtitle set to \"{change}\"")
+
+
+def sync_screenshots(client, localization_id, read_from=None):
+    """`read_from` is the localization whose set is compared against, when the one being written
+    is new or pretend: a new version inherits the live one's screenshots."""
+    local = local_screenshots()
+    if not local:
+        print("store: no screenshots in site/store/screenshots; leaving the store's alone")
+        return
+    source = read_from or localization_id
+    sets = client.get(f"/appStoreVersionLocalizations/{source}/appScreenshotSets").get("data", [])
+    desktop = next((s for s in sets if s["attributes"]["screenshotDisplayType"] == "APP_DESKTOP"), None)
+    if desktop is None:
+        desktop = client.call("POST", "/appScreenshotSets", {"data": {
+            "type": "appScreenshotSets", "attributes": {"screenshotDisplayType": "APP_DESKTOP"},
+            "relationships": {"appStoreVersionLocalization": {"data": {"type": "appStoreVersionLocalizations", "id": localization_id}}}}})["data"]
+    set_id = desktop["id"]
+    remote = [] if set_id == "dry-run" or localization_id == "dry-run" and not read_from else [
+        {"id": s["id"], "fileName": s["attributes"]["fileName"], "sourceFileChecksum": s["attributes"].get("sourceFileChecksum")}
+        for s in client.get(f"/appScreenshotSets/{set_id}/appScreenshots").get("data", [])]
+    upload, delete, order = screenshot_plan(local, remote)
+    for screenshot_id in delete:
+        client.call("DELETE", f"/appScreenshots/{screenshot_id}")
+    ids_by_name = {r["fileName"]: r["id"] for r in remote if r["id"] not in delete}
+    for name in upload:
+        path = SCREENSHOTS_DIR / name
+        data = path.read_bytes()
+        reservation = client.call("POST", "/appScreenshots", {"data": {
+            "type": "appScreenshots", "attributes": {"fileName": name, "fileSize": len(data)},
+            "relationships": {"appScreenshotSet": {"data": {"type": "appScreenshotSets", "id": set_id}}}}})["data"]
+        for operation in reservation["attributes"].get("uploadOperations", []):
+            chunk = data[operation["offset"]:operation["offset"] + operation["length"]]
+            headers = {h["name"]: h["value"] for h in operation.get("requestHeaders", [])}
+            request = urllib.request.Request(operation["url"], data=chunk, method=operation["method"], headers=headers)
+            urllib.request.urlopen(request).read()
+        client.call("PATCH", f"/appScreenshots/{reservation['id']}", {"data": {
+            "type": "appScreenshots", "id": reservation["id"],
+            "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest()}}})
+        ids_by_name[name] = reservation["id"]
+    print(f"store: screenshots: {len(upload)} uploaded, {len(delete)} removed, {len(order)} in the set")
+    if upload or delete:
+        client.call("PATCH", f"/appScreenshotSets/{set_id}/relationships/appScreenshots", {"data": [
+            {"type": "appScreenshots", "id": ids_by_name[name]} for name in order if name in ids_by_name]})
+
+
+def sync_previews(client, localization_id, read_from=None):
+    """The clip in site/store/preview goes into the version's desktop preview set (spec 0061),
+    reconciled by name and checksum like the pictures, then waited for: Apple transcodes a
+    preview after upload and can refuse it there, which is the one check that can't be done
+    here, so a failure stops the run before the submission."""
+    local = local_preview()
+    if not local:
+        print("store: no preview in site/store/preview; leaving the store's alone")
+        return
+    problems = preview_problems(probe_movie(PREVIEW_DIR / PREVIEW_NAME))
+    if problems:
+        raise SystemExit("store: " + "; ".join(problems))
+    source = read_from or localization_id
+    sets = client.get(f"/appStoreVersionLocalizations/{source}/appPreviewSets").get("data", [])
+    desktop = next((s for s in sets if s["attributes"]["previewType"] == "DESKTOP"), None)
+    if desktop is None:
+        desktop = client.call("POST", "/appPreviewSets", {"data": {
+            "type": "appPreviewSets", "attributes": {"previewType": "DESKTOP"},
+            "relationships": {"appStoreVersionLocalization": {"data": {"type": "appStoreVersionLocalizations", "id": localization_id}}}}})["data"]
+    set_id = desktop["id"]
+    remote = [] if set_id == "dry-run" or localization_id == "dry-run" and not read_from else [
+        {"id": p["id"], "fileName": p["attributes"]["fileName"], "sourceFileChecksum": p["attributes"].get("sourceFileChecksum")}
+        for p in client.get(f"/appPreviewSets/{set_id}/appPreviews").get("data", [])]
+    upload, delete, order = screenshot_plan(local, remote)
+    for preview_id in delete:
+        client.call("DELETE", f"/appPreviews/{preview_id}")
+    uploaded = []
+    for name in upload:
+        data = (PREVIEW_DIR / name).read_bytes()
+        reservation = client.call("POST", "/appPreviews", {"data": {
+            "type": "appPreviews", "attributes": {"fileName": name, "fileSize": len(data), "mimeType": "video/quicktime"},
+            "relationships": {"appPreviewSet": {"data": {"type": "appPreviewSets", "id": set_id}}}}})["data"]
+        for operation in reservation["attributes"].get("uploadOperations", []):
+            chunk = data[operation["offset"]:operation["offset"] + operation["length"]]
+            headers = {h["name"]: h["value"] for h in operation.get("requestHeaders", [])}
+            request = urllib.request.Request(operation["url"], data=chunk, method=operation["method"], headers=headers)
+            urllib.request.urlopen(request).read()
+        # The poster frame: five seconds in, where the popover is arming.
+        client.call("PATCH", f"/appPreviews/{reservation['id']}", {"data": {
+            "type": "appPreviews", "id": reservation["id"],
+            "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest(), "previewFrameTimeCode": "00:00:05:00"}}})
+        uploaded.append(reservation["id"])
+    print(f"store: preview: {len(upload)} uploaded, {len(delete)} removed, {len(order)} in the set")
+    for preview_id in uploaded:
+        if preview_id == "dry-run":
+            continue
+        wait_for_preview(client, preview_id)
+
+
+def wait_for_preview(client, preview_id, minutes=20):
+    """Apple's processing of an uploaded clip, polled until it completes or fails."""
+    deadline = time.time() + minutes * 60
+    while time.time() < deadline:
+        state = client.get(f"/appPreviews/{preview_id}").get("data", {}).get("attributes", {}).get("assetDeliveryState") or {}
+        if state.get("state") == "COMPLETE":
+            print("store: preview processed")
+            return
+        if state.get("state") == "FAILED":
+            errors = "; ".join(e.get("description") or e.get("code", "?") for e in state.get("errors", []))
+            raise SystemExit(f"store: Apple refused the preview: {errors or 'no reason given'}")
+        print(f"store: preview is {state.get('state', 'unknown').lower().replace('_', ' ')}; waiting")
+        time.sleep(30)
+    raise SystemExit(f"store: the preview was still processing after {minutes} minutes")
+
+
+def submit(client, version, dry_run):
+    build_number = build_number_in_zip(version)
+    print(f"store: {version} is build {build_number} in the zip")
+    build_id = wait_for_build(client, build_number)
+    versions = store_versions(client)
+    live = live_version(versions)
+    decision, subject = slot_decision(versions, version)
+    if decision == "selling":
+        print(f"store: {version} is already on sale; nothing to do")
+        return
+    if decision == "blocked":
+        raise SystemExit(f"store: {subject} holds the review slot; run this again when it clears")
+    entries = changelog_entries(CHANGELOG.read_text())
+    news = whats_new(entries, live or "0", version)
+    listing = read_listing()
+    for name, text in [("What's New", news), ("the description", listing.get("description", ""))]:
+        phrase = names_the_mac(text)
+        if phrase:
+            raise SystemExit(f"store: {name} says \"{phrase}\", which App Review reads as Apple's mark in a name (5.2.5)")
+    if dry_run:
+        print(f"store: dry run. Live version {live}; {decision} {version} on build {build_id}; What's New:\n{news}\n")
+
+    if decision == "create":
+        created = client.call("POST", "/appStoreVersions", {"data": {
+            "type": "appStoreVersions",
+            "attributes": {"platform": PLATFORM, "versionString": version, "releaseType": "AFTER_APPROVAL"},
+            "relationships": {"app": {"data": {"type": "apps", "id": APP_ID}},
+                              "build": {"data": {"type": "builds", "id": build_id}}}}})
+        version_id = created["data"]["id"]
+    else:
+        version_id = subject
+        client.call("PATCH", f"/appStoreVersions/{version_id}", {"data": {
+            "type": "appStoreVersions", "id": version_id, "attributes": {"releaseType": "AFTER_APPROVAL"},
+            "relationships": {"build": {"data": {"type": "builds", "id": build_id}}}}})
+
+    loc = localization(client, version_id)
+    # A dry run has no version of its own to read, so it diffs against the live one, which is
+    # what a new version starts as a copy of. A real run reads the version it's writing.
+    live_id = next((v["id"] for v in versions if v["versionString"] == live), None)
+    live_loc = localization(client, live_id) if (dry_run and live_id) else loc
+    compared = live_loc if dry_run else loc
+    remote_listing = {k: compared["attributes"].get(k) for k in ("description", "keywords", "promotionalText")}
+    attributes = {"whatsNew": news}
+    attributes.update(listing_changes(listing, remote_listing))
+    client.call("PATCH", f"/appStoreVersionLocalizations/{loc['id']}", {"data": {
+        "type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": attributes}})
+    print(f"store: What's New set; listing fields changed: {sorted(k for k in attributes if k != 'whatsNew') or 'none'}")
+
+    sync_subtitle(client, dry_run)
+
+    note = read_review_note()
+    if note:
+        detail = client.get(f"/appStoreVersions/{version_id}/appStoreReviewDetail").get("data") if version_id != "dry-run" else None
+        if detail:
+            client.call("PATCH", f"/appStoreReviewDetails/{detail['id']}", {"data": {
+                "type": "appStoreReviewDetails", "id": detail["id"], "attributes": {"notes": note}}})
+        else:
+            client.call("POST", "/appStoreReviewDetails", {"data": {
+                "type": "appStoreReviewDetails", "attributes": {"notes": note},
+                "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}})
+
+    sync_screenshots(client, loc["id"], read_from=live_loc["id"] if dry_run and live_id else None)
+    sync_previews(client, loc["id"], read_from=live_loc["id"] if dry_run and live_id else None)
+
+    # Export compliance: OnCue uses no encryption of its own, and a build without the answer
+    # can't be reviewed. Info.plist carries the answer, so a build normally arrives with it,
+    # and Apple refuses to set it again; only a build without one is answered here.
+    if build_id != "dry-run":
+        answered = client.get(f"/builds/{build_id}?fields[builds]=usesNonExemptEncryption")["data"]["attributes"].get("usesNonExemptEncryption")
+    else:
+        answered = None
+    if answered is None:
+        client.call("PATCH", f"/builds/{build_id}", {"data": {
+            "type": "builds", "id": build_id, "attributes": {"usesNonExemptEncryption": False}}})
+
+    submission = open_submission(client)
+    if submission is None:
+        submission = client.call("POST", "/reviewSubmissions", {"data": {
+            "type": "reviewSubmissions", "attributes": {"platform": PLATFORM},
+            "relationships": {"app": {"data": {"type": "apps", "id": APP_ID}}}}})["data"]
+    items = [] if submission["id"] == "dry-run" else client.get(f"/reviewSubmissions/{submission['id']}/items").get("data", [])
+    already = any((i.get("relationships", {}).get("appStoreVersion", {}).get("data") or {}).get("id") == version_id for i in items)
+    if not already:
+        client.call("POST", "/reviewSubmissionItems", {"data": {
+            "type": "reviewSubmissionItems",
+            "relationships": {"reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission["id"]}},
+                              "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}})
+    client.call("PATCH", f"/reviewSubmissions/{submission['id']}", {"data": {
+        "type": "reviewSubmissions", "id": submission["id"], "attributes": {"submitted": True}}})
+    print(f"store: {version} submitted for review on build {build_number}" + (" (dry run: nothing sent)" if dry_run else ""))
+
+
+def open_submission(client):
+    """A review submission already open and not yet sent, which a run that failed partway leaves
+    behind; App Store Connect allows one per platform."""
+    data = client.get(f"/apps/{APP_ID}/reviewSubmissions?filter[platform]={PLATFORM}&filter[state]=READY_FOR_REVIEW").get("data", [])
+    return data[0] if data else None
+
+
+def pull_listing(client):
+    versions = store_versions(client)
+    live = live_version(versions)
+    version_id = next(v["id"] for v in versions if v["versionString"] == live)
+    loc = localization(client, version_id)["attributes"]
+    STORE_DIR.mkdir(parents=True, exist_ok=True)
+    for key, name in {"description": "description.txt", "keywords": "keywords.txt", "promotionalText": "promotional-text.txt"}.items():
+        (STORE_DIR / name).write_text((loc.get(key) or "").strip() + "\n")
+    detail = client.get(f"/appStoreVersions/{version_id}/appStoreReviewDetail").get("data")
+    (STORE_DIR / "review-note.txt").write_text(((detail or {}).get("attributes", {}).get("notes") or "").strip() + "\n")
+    live_info = next((i for i in app_infos(client) if app_info_state(i) in LIVE), None)
+    info_loc = app_info_localization(client, live_info["id"]) if live_info else None
+    (STORE_DIR / "subtitle.txt").write_text(((info_loc or {}).get("attributes", {}).get("subtitle") or "").strip() + "\n")
+    print(f"store: site/store holds the listing of {live}")
+
+
+def debug_app(purpose):
+    """A fresh Debug OnCue.app, built into the store's own derived-data folder."""
+    derived = Path(os.environ.get("TMPDIR", "/tmp")) / "oncue-store"
+    log = derived / "xcodebuild.log"
+    derived.mkdir(parents=True, exist_ok=True)
+    print(f"store: building a Debug OnCue for the {purpose}")
+    plist = REPO / "OnCue" / "Info.plist"
+    before = subprocess.run(["/usr/libexec/PlistBuddy", "-c", "Print :CFBundleVersion", str(plist)], capture_output=True, text=True).stdout.strip()
+    with open(log, "w") as out:
+        result = subprocess.run(["xcodebuild", "-project", str(REPO / "OnCue.xcodeproj"), "-scheme", "OnCue", "-configuration", "Debug",
+                                 "-destination", "platform=macOS", "-derivedDataPath", str(derived), "build"], stdout=out, stderr=subprocess.STDOUT, cwd=REPO)
+    subprocess.run(["/usr/libexec/PlistBuddy", "-c", f"Set :CFBundleVersion {before}", str(plist)])
+    if result.returncode != 0:
+        raise SystemExit(f"store: the Debug build failed (full log: {log})")
+    return derived / "Build" / "Products" / "Debug" / "OnCue.app"
+
+
+def render_preview():
+    app = debug_app("preview")
+    out_dir = Path.home() / "Movies" / "OnCue" / "store-preview"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for p in out_dir.iterdir():
+        p.unlink()
+    captions = PREVIEW_DIR / "captions.txt"
+    if not captions.exists():
+        raise SystemExit(f"store: no {captions.relative_to(REPO)}; the clip needs its captions")
+    (out_dir / "captions.txt").write_text(captions.read_text())
+    result = subprocess.run([str(app / "Contents" / "MacOS" / "OnCue"), "-renderStorePreview", str(out_dir)],
+                            capture_output=True, text=True)
+    if result.returncode != 0 or not (out_dir / PREVIEW_NAME).exists():
+        raise SystemExit(f"store: the app wrote no preview: {(result.stdout + result.stderr).strip()[-400:]}")
+    info = probe_movie(out_dir / PREVIEW_NAME)
+    problems = preview_problems(info)
+    if problems:
+        raise SystemExit("store: " + "; ".join(problems))
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+    (PREVIEW_DIR / PREVIEW_NAME).write_bytes((out_dir / PREVIEW_NAME).read_bytes())
+    print(f"store: {PREVIEW_NAME} in site/store/preview: {info['width']}x{info['height']}, {info['seconds']:.1f} s, {info['codecs']}")
+
+
+def card_crop(width, height, card=CARD_SIZE):
+    """The largest centred slice of a width x height picture with the card's shape, as (width, height)."""
+    if width * card[1] > height * card[0]:
+        return (height * card[0] // card[1], height)
+    return (width, width * card[1] // card[0])
+
+
+def render_card():
+    sources = sorted(SCREENSHOTS_DIR.glob(f"{CARD_SOURCE}*.png"))
+    if len(sources) != 1:
+        raise SystemExit(f"store: expected one picture named {CARD_SOURCE}* in site/store/screenshots, found {len(sources)}")
+    probe = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", str(sources[0])], check=True,
+                           capture_output=True, text=True).stdout
+    width, height = (int(re.search(rf"{key}: (\d+)", probe).group(1)) for key in ("pixelWidth", "pixelHeight"))
+    crop_w, crop_h = card_crop(width, height)
+    # sips crops about the centre, then scales; both in one call would scale first.
+    subprocess.run(["sips", "-c", str(crop_h), str(crop_w), str(sources[0]), "--out", str(CARD)], check=True,
+                   stdout=subprocess.DEVNULL)
+    subprocess.run(["sips", "-z", str(CARD_SIZE[1]), str(CARD_SIZE[0]), str(CARD)], check=True, stdout=subprocess.DEVNULL)
+    print(f"store: {CARD.relative_to(REPO)} cut from {sources[0].name}: {CARD_SIZE[0]}x{CARD_SIZE[1]}")
+
+
+def render_screenshots():
+    app = debug_app("pictures")
+    out_dir = Path.home() / "Movies" / "OnCue" / "store-screenshots"
+    if out_dir.exists():
+        for p in out_dir.iterdir():
+            p.unlink()
+    subprocess.run([str(app / "Contents" / "MacOS" / "OnCue"), "-renderStoreScreenshots", str(out_dir)], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    pictures = sorted(p for p in out_dir.iterdir() if p.suffix == ".png")
+    if not pictures:
+        raise SystemExit("store: the app wrote no pictures")
+    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    for old in SCREENSHOTS_DIR.glob("*.png"):
+        old.unlink()
+    for picture in pictures:
+        (SCREENSHOTS_DIR / picture.name).write_bytes(picture.read_bytes())
+    print(f"store: {len(pictures)} pictures in site/store/screenshots")
+    render_card()
+
+
+# --- Self-tests ---------------------------------------------------------------------------------
+
+SAMPLE_CHANGELOG = """
+<h3>4.3</h3><p class="release-meta">1 October 2026</p><p>Third thing.</p>
+<p class="release-meta">I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</p>
+<h3>4.2</h3><p class="release-meta">30 September 2026</p><p>Second thing,
+  wrapped.</p><p>And more.</p>
+<p class="release-meta">I asked AI to draft this entry for me. Any surviving AI smells are my oversight.</p>
+<h3>4.1</h3><p class="release-meta">29 September 2026</p><p>First thing.</p>
+"""
+
+
+class Tests(unittest.TestCase):
+    def test_entries_drop_dates_and_the_disclosure_and_unwrap(self):
+        entries = changelog_entries(SAMPLE_CHANGELOG)
+        self.assertEqual(entries["4.2"], ["Second thing, wrapped.", "And more."])
+        self.assertEqual(entries["4.3"], ["Third thing."])
+
+    def test_whats_new_blends_everything_the_store_has_not_seen_oldest_first(self):
+        entries = changelog_entries(SAMPLE_CHANGELOG)
+        self.assertEqual(whats_new(entries, "4.1", "4.3"), "Second thing, wrapped.\n\nAnd more.\n\nThird thing.")
+        self.assertEqual(whats_new(entries, "4.2", "4.3"), "Third thing.")
+
+    def test_versions_compare_as_numbers(self):
+        self.assertLess(version_key("4.9"), version_key("4.10"))
+        self.assertLess(version_key("4.10"), version_key("4.10.1"))
+
+    def test_the_slot(self):
+        versions = [{"id": "a", "versionString": "4.16", "appStoreState": "READY_FOR_SALE"},
+                    {"id": "b", "versionString": "4.17", "appStoreState": "WAITING_FOR_REVIEW"}]
+        self.assertEqual(slot_decision(versions, "4.18"), ("blocked", "4.17"))
+        self.assertEqual(slot_decision(versions, "4.16"), ("selling", "a"))
+        self.assertEqual(slot_decision(versions[:1], "4.18"), ("create", None))
+        rejected = versions[:1] + [{"id": "c", "versionString": "4.18", "appStoreState": "DEVELOPER_REJECTED"}]
+        self.assertEqual(slot_decision(rejected, "4.18"), ("reuse", "c"))
+        self.assertEqual(live_version(versions), "4.16")
+
+    def test_mac_in_a_name_is_refused_and_in_a_sentence_is_not(self):
+        self.assertEqual(names_the_mac("OnCue for Mac records motion"), "for Mac")
+        self.assertEqual(names_the_mac("a camera on the Mac you already own"), "on the Mac")
+        self.assertIsNone(names_the_mac("keeps the Mac awake the whole time"))
+        self.assertIsNone(names_the_mac("Needs macOS 14 or later."))
+
+    def test_screenshot_reconciliation(self):
+        local = [("1.png", "aaa"), ("2.png", "bbb"), ("3.png", "ccc")]
+        remote = [{"id": "r1", "fileName": "1.png", "sourceFileChecksum": "aaa"},
+                  {"id": "r2", "fileName": "2.png", "sourceFileChecksum": "old"},
+                  {"id": "r9", "fileName": "9.png", "sourceFileChecksum": "zzz"}]
+        upload, delete, order = screenshot_plan(local, remote)
+        self.assertEqual(upload, ["2.png", "3.png"])
+        self.assertEqual(delete, ["r2", "r9"])
+        self.assertEqual(order, ["1.png", "2.png", "3.png"])
+        self.assertEqual(screenshot_plan(local, [{"id": f"r{n}", "fileName": n, "sourceFileChecksum": c} for n, c in local]), ([], [], ["1.png", "2.png", "3.png"]))
+
+    def test_only_changed_listing_fields_are_sent(self):
+        local = {"description": "d", "keywords": "k", "promotionalText": ""}
+        self.assertEqual(listing_changes(local, {"description": "d", "keywords": "old", "promotionalText": None}), {"keywords": "k"})
+        self.assertEqual(listing_changes(local, {"description": "d", "keywords": "k", "promotionalText": None}), {})
+
+    def test_the_subtitle_is_checked_and_sent_only_when_it_differs(self):
+        self.assertIsNone(subtitle_problem("Motion & sound security camera"))
+        self.assertIn("31 characters", subtitle_problem("Security camera, motion & sound"))
+        self.assertIn("5.2.5", subtitle_problem("Security camera for Mac"))
+        self.assertEqual(subtitle_change("new", "old"), "new")
+        self.assertIsNone(subtitle_change("same", "same"))
+        self.assertIsNone(subtitle_change("", "whatever"), "an empty file leaves the store's alone")
+
+    def test_the_preview_is_checked_against_the_stores_bounds(self):
+        good = {"width": 1920, "height": 1080, "seconds": 24.0, "codecs": ["avc1"], "audio_tracks": 0}
+        self.assertEqual(preview_problems(good), [])
+        self.assertEqual(len(preview_problems({**good, "width": 2880, "height": 1800})), 1)
+        self.assertEqual(len(preview_problems({**good, "seconds": 31.0})), 1)
+        self.assertEqual(len(preview_problems({**good, "codecs": ["hvc1"], "audio_tracks": 1})), 2)
+        if (PREVIEW_DIR / PREVIEW_NAME).exists():
+            self.assertEqual(preview_problems(probe_movie(PREVIEW_DIR / PREVIEW_NAME)), [], "the committed clip")
+
+    def test_the_card_is_the_largest_centred_slice_of_its_shape(self):
+        self.assertEqual(card_crop(2880, 1800), (2880, 1512), "a store picture loses top and bottom")
+        self.assertEqual(card_crop(1200, 1200), (1200, 630))
+        self.assertEqual(card_crop(4000, 630), (1200, 630), "a wide one loses its sides")
+
+    def test_every_heading_carries_the_anchor_the_app_links_to(self):
+        self.assertEqual(changelog_anchor_problems('<h3 id="v4-1">4.1</h3><h3>4.2</h3><h3 id="v4-3">4.3</h3>'), ["4.2"])
+        self.assertEqual(changelog_anchor_problems(CHANGELOG.read_text()), [])
+
+    def test_the_real_changelog_parses_and_has_the_front_page_version(self):
+        entries = changelog_entries(CHANGELOG.read_text())
+        self.assertTrue(entries)
+        for version, paragraphs in entries.items():
+            self.assertTrue(paragraphs, f"{version} has no paragraphs")
+            self.assertFalse(any(DISCLOSURE in p for p in paragraphs), f"{version} carries the disclosure")
+
+
+def main(argv):
+    if "--self-test" in argv:
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(Tests)
+        result = unittest.TextTestRunner(verbosity=0).run(suite)
+        return 0 if result.wasSuccessful() else 1
+    if "--screenshots" in argv:
+        render_screenshots()
+        return 0
+    if "--preview" in argv:
+        render_preview()
+        return 0
+    if "--card" in argv:
+        render_card()
+        return 0
+    if "--pull-listing" in argv:
+        pull_listing(Client())
+        return 0
+    dry_run = "--dry-run" in argv
+    versions = [a for a in argv if not a.startswith("--")]
+    if len(versions) != 1:
+        print(__doc__)
+        return 2
+    submit(Client(dry_run=dry_run), versions[0], dry_run)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -1,0 +1,455 @@
+#!/bin/sh
+# Builds, signs, notarizes, staples and packages a release, and leaves the zip in site/downloads
+# so Netlify serves it from the same place as the pages.
+#
+# Everything that could ship something users can't open is a hard stop: an unsigned build, the
+# wrong signing identity, a missing hardened runtime, a rejected notarization, a zip Gatekeeper
+# won't accept. Nothing lands in site/downloads until all of that passes.
+#
+# A run without APP_STORE set stops after the direct release. STORE_FROM_ARCHIVE=1 with
+# APP_STORE=export or upload sends the archive that run left to the store without rebuilding.
+#
+# Once, before the first release:
+#   xcrun notarytool store-credentials oncue-notary-jva --apple-id <your Apple ID> --team-id DC3U4XZMM4
+# (it asks for an app-specific password from appleid.apple.com)
+set -u
+cd "$(dirname "$0")/.." || exit 2
+
+TEAM=DC3U4XZMM4
+IDENTITY="Developer ID Application"
+PROFILE="${NOTARY_PROFILE:-oncue-notary-jva}"
+ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
+# The Homebrew tap is its own repo, because that is what `brew tap` wants. It sits next to
+# this one by default; point ONCUE_TAP somewhere else if yours does not, or set SKIP_TAP=1 on a
+# checkout that doesn't have it.
+SKIP_TAP="${SKIP_TAP:-0}"
+TAP="${ONCUE_TAP:-../homebrew-tap}"
+cask="$TAP/Casks/oncue.rb"
+# The App Store gets the same archive, exported a second time (spec 0036). APP_STORE=export
+# leaves a signed .pkg in the work folder to inspect; APP_STORE=upload does that and then sends
+# it to App Store Connect. Off by default, so an ordinary release is the Developer ID zip and
+# nothing else. APP_STORE=submit uploads and then runs scripts/store for the version, which
+# creates the store version, sets What's New from the changelog, syncs the listing and the
+# screenshots from site/store, and submits for review (spec 0057). Every version is meant to go
+# to the store, so set submit on every release run.
+#
+# The upload authenticates with an App Store Connect API key (Users and Access > Integrations >
+# Team Keys, role App Manager). Nothing about it lives in this repo:
+#   ASC_KEY=~/path/AuthKey_<id>.p8  ASC_KEY_ID=<id>  ASC_ISSUER=<issuer id>
+APP_STORE="${APP_STORE:-0}"
+EGGDEVIL=A2MVZ4JVLC
+
+work="${TMPDIR:-/tmp}/oncue-release"
+archive="$work/OnCue.xcarchive"
+export_dir="$work/export"
+options="$work/ExportOptions.plist"
+log="$work/release.log"
+
+fail() { echo "release: $*" >&2; exit 1; }
+step() { echo "release: $*"; }
+
+store() {
+# --- The App Store, from the same archive ------------------------------------------------------
+
+# Last on purpose. The direct release above is complete and its summary printed, so a store
+# failure costs an upload and nothing else. The archive is the one the zip came from, so the
+# store build is the same code and the same CFBundleVersion, and both are checked below rather
+# than assumed. Apple notarizes store builds on their side, so none of the notarize and staple
+# block applies here.
+store_dir="$work/store"
+store_options="$work/StoreExportOptions.plist"
+rm -rf "$store_dir" "$work/store-check" "$work/store-upload"
+
+# manageAppVersionAndBuildNumber is on by default and lets Xcode rewrite CFBundleVersion on the
+# way up if App Store Connect already has that number. That would quietly break the one invariant
+# this section exists for, two channels carrying the same build, so it's off, and a clash fails.
+store_plist() {
+  cat >"$store_options" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>teamID</key>
+	<string>$TEAM</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>destination</key>
+	<string>$1</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+</dict>
+</plist>
+PLIST
+}
+
+echo
+step "exporting for the App Store"
+store_plist export
+xcodebuild -exportArchive -archivePath "$archive" -exportPath "$store_dir" \
+  -exportOptionsPlist "$store_options" -allowProvisioningUpdates >>"$log" 2>&1 ||
+  fail "store export failed (full log: $log). The direct release above is complete and unaffected"
+
+pkg=$(find "$store_dir" -maxdepth 1 -name '*.pkg' | head -1)
+[ -n "$pkg" ] || fail "the store export produced no .pkg (full log: $log)"
+
+# --- Is the store build what the site says it is? ----------------------------------------------
+
+step "checking the store package"
+pkgutil --check-signature "$pkg" >>"$log" 2>&1 || fail "the store package isn't signed (full log: $log)"
+pkgutil --expand-full "$pkg" "$work/store-check" >>"$log" 2>&1 || fail "couldn't open the store package to check it"
+store_app=$(find "$work/store-check" -maxdepth 5 -name 'OnCue.app' -type d | head -1)
+[ -n "$store_app" ] || fail "no OnCue.app inside the store package"
+
+[ -f "$store_app/Contents/embedded.provisionprofile" ] ||
+  fail "the store build has no embedded provisioning profile, and App Store Connect rejects those"
+
+store_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$store_app/Contents/Info.plist")
+[ "$store_build" = "$shipped_build" ] ||
+  fail "the store build says $store_build and the direct one says $shipped_build. Same archive, so this shouldn't happen"
+
+# The front page tells people to run codesign against the app and promises there is no network
+# entitlement. The store build picks up two identifier keys the direct one doesn't, which the page
+# accounts for, but a network key would make the page a lie for everyone who installed from there.
+codesign -d --entitlements - --xml "$store_app" 2>/dev/null | grep -q "com.apple.security.network" &&
+  fail "the store build carries a network entitlement, which the site says OnCue never has"
+
+if [ "$APP_STORE" = export ]; then
+  echo
+  step "store package is ready to inspect: $pkg"
+  echo "  CFBundleVersion $store_build, the same as the zip. Nothing was uploaded (APP_STORE=export)."
+  exit 0
+fi
+
+# --- Upload --------------------------------------------------------------------------------------
+
+step "uploading to App Store Connect (this waits on Apple)"
+store_plist upload
+xcodebuild -exportArchive -archivePath "$archive" -exportPath "$work/store-upload" \
+  -exportOptionsPlist "$store_options" -allowProvisioningUpdates \
+  -authenticationKeyPath "$ASC_KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER" \
+  >>"$log" 2>&1 ||
+  fail "upload failed (full log: $log). The package is at $pkg; Transporter can upload it by hand"
+
+echo
+step "$version is uploaded to App Store Connect as build $store_build"
+if [ "$APP_STORE" = submit ]; then
+  echo "  the listing and the review follow below (scripts/store)."
+else
+  echo "  it's a build on the record, not a release. Pick it for the version there and submit for review."
+fi
+}
+
+# --- Preflight: everything we can check before spending time on a build -----------------------
+
+[ "$ALLOW_DIRTY" = 1 ] || [ -z "$(git status --porcelain -- OnCue OnCue.xcodeproj)" ] ||
+  fail "uncommitted changes under OnCue/. Commit them so the release matches a commit, or set ALLOW_DIRTY=1"
+
+# The team is part of the match. This Mac still holds EggDevil's Developer ID certificate, and a
+# check for the identity name alone would pass on it and spend a build finding out after.
+security find-identity -v -p codesigning | grep "$IDENTITY" | grep -q "($TEAM)" ||
+  fail "no \"$IDENTITY\" certificate for team $TEAM in the keychain (Xcode > Settings > Accounts > Manage Certificates)"
+
+xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1 ||
+  fail "no notarytool keychain profile \"$PROFILE\". See the comment at the top of this script"
+
+# Everything the store path needs, checked before a build is spent. The first check is the one
+# that matters: nothing ships to the App Store from EggDevil. The record moves to Jake's own team
+# first (.claude/memory/app-store-transfer-plan.md), and until then this refuses, whatever TEAM
+# says elsewhere. The certificate names have not been seen on this Mac yet; the first run on the
+# new team is where they get confirmed.
+case "$APP_STORE" in
+  0) ;;
+  export | upload | submit)
+    [ "$TEAM" != "$EGGDEVIL" ] ||
+      fail "APP_STORE=$APP_STORE, but TEAM is $EGGDEVIL, which is EggDevil. Nothing ships to the App Store
+  from that team. Transfer the record to the new team and change TEAM first"
+    security find-identity -v -p codesigning | grep -q "Apple Distribution\|3rd Party Mac Developer Application" ||
+      fail "no Mac App Store distribution certificate in the keychain (Xcode > Settings > Accounts > Manage Certificates)"
+    security find-identity -v -p basic | grep -q "3rd Party Mac Developer Installer\|Mac Installer Distribution" ||
+      fail "no Mac Installer Distribution certificate in the keychain, so the store .pkg can't be signed"
+    if [ "$APP_STORE" = upload ] || [ "$APP_STORE" = submit ]; then
+      [ -f "${ASC_KEY:-}" ] ||
+        fail "ASC_KEY isn't a file. Point it at the App Store Connect API key (AuthKey_<id>.p8); see the top of this script"
+      [ -n "${ASC_KEY_ID:-}" ] || fail "ASC_KEY_ID is unset. It's the key's ID, the part after AuthKey_ in the file name"
+      [ -n "${ASC_ISSUER:-}" ] || fail "ASC_ISSUER is unset. It's the issuer ID shown above the keys in App Store Connect"
+    fi
+    ;;
+  *) fail "APP_STORE=$APP_STORE means nothing. Use export (a .pkg to inspect), upload (that, then send it), submit (that, then the listing and review through scripts/store), or leave it unset" ;;
+esac
+
+# --- The store from the archive the last run left ---------------------------------------------
+
+# A release run without APP_STORE set stops after the direct release, and the zip it left in
+# site/downloads stops a second run. This re-exports the archive from that run for the store
+# instead of rebuilding, after checking it's the build the site serves. 4.14 went out that way
+# on 2026-09-24 and the store found out a day later.
+STORE_FROM_ARCHIVE="${STORE_FROM_ARCHIVE:-0}"
+if [ "$STORE_FROM_ARCHIVE" = 1 ]; then
+  [ "$APP_STORE" != 0 ] || fail "STORE_FROM_ARCHIVE=1 needs APP_STORE=export or APP_STORE=upload"
+  [ -d "$archive" ] || fail "no archive at $archive. This only re-exports what the last release run built"
+  version=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleShortVersionString" "$archive/Info.plist") ||
+    fail "couldn't read the version from $archive"
+  shipped_build=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleVersion" "$archive/Info.plist") ||
+    fail "couldn't read the build number from $archive"
+  destination="site/downloads/OnCue-$version.zip"
+  [ -f "$destination" ] ||
+    fail "$destination doesn't exist, so $version never shipped here. Run the full release with APP_STORE set instead"
+  mkdir -p "$work"
+  unzip -p "$destination" 'OnCue.app/Contents/Info.plist' >"$work/released.plist" 2>/dev/null ||
+    fail "couldn't read the Info.plist inside $destination"
+  zip_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$work/released.plist")
+  [ "$zip_build" = "$shipped_build" ] ||
+    fail "the archive is build $shipped_build and $destination is build $zip_build. The archive isn't the one that shipped"
+  step "re-exporting the $version archive, build $shipped_build, for the App Store ($APP_STORE)"
+  store
+  exit 0
+fi
+
+settings=$(xcodebuild -project OnCue.xcodeproj -target OnCue -showBuildSettings 2>/dev/null)
+version=$(printf '%s\n' "$settings" |
+  awk -F' = ' '$1 ~ /MARKETING_VERSION$/ { print $2; exit }')
+[ -n "$version" ] || fail "couldn't read MARKETING_VERSION from the project"
+bundle_id=$(printf '%s\n' "$settings" |
+  awk -F' = ' '$1 ~ /PRODUCT_BUNDLE_IDENTIFIER$/ { print $2; exit }')
+[ -n "$bundle_id" ] || fail "couldn't read PRODUCT_BUNDLE_IDENTIFIER from the project"
+
+zip_name="OnCue-$version.zip"
+destination="site/downloads/$zip_name"
+
+# The site carries the version in plain HTML rather than being templated, so this is what keeps
+# the page and the build from drifting apart. Fixed strings, not patterns: "4.0" as a regex
+# happily matches the "400,700" in the stylesheet link, which is how this check first passed a
+# page that named a different version entirely.
+grep -qF "downloads/$zip_name" site/index.html ||
+  fail "site/index.html doesn't link to downloads/$zip_name. Update the download section first"
+grep -qF "Version $version," site/index.html ||
+  fail "site/index.html doesn't say \"Version $version,\". Update the release line first"
+# The changelog and its feed are both hand-written, so nothing but this stops a release shipping
+# without an entry in either. The feed is how anyone hears about a release at all: OnCue has no
+# network entitlement and never checks for itself (spec 0026).
+grep -qF ">$version<" site/changelog/index.html ||
+  fail "site/changelog/index.html has no heading for $version. Write what changed first"
+grep -qF "<title>OnCue $version</title>" site/changelog/feed.xml ||
+  fail "site/changelog/feed.xml has no item for $version. Add one, or nobody hears about this release"
+# Never overwrite a release someone may already have downloaded: a second file under the same
+# name with different bytes is worse than no file.
+[ -e "$destination" ] &&
+  fail "$destination already exists. Bump MARKETING_VERSION, or delete it to rebuild the same version"
+
+# This is where the cask's hash can be known, so this is where the cask gets written. Publishing
+# it is a separate act: brew reads the tap over the network, and a cask written here and never
+# pushed leaves brew users on the old version with nothing on this machine looking wrong. This
+# script cannot see that, and does not claim to. scripts/check-tap asks GitHub and the site what
+# they actually serve, which is the only place that failure is visible. What is checked here is
+# the smaller thing: that the file exists and is shaped the way the rewrite below expects, before
+# a build is spent finding out otherwise.
+if [ "$SKIP_TAP" = 1 ]; then
+  step "SKIP_TAP=1: the cask will not be touched"
+else
+  [ -f "$cask" ] ||
+    fail "no cask at $cask. Clone the tap beside this repo (git clone git@github.com:jvalol/homebrew-tap.git),
+  point ONCUE_TAP at it, or set SKIP_TAP=1 to release without moving the cask"
+  grep -q '^  version "' "$cask" || fail "$cask has no 'version \"...\"' line to rewrite"
+  grep -q '^  sha256 "' "$cask" || fail "$cask has no 'sha256 \"...\"' line to rewrite"
+  # The cask builds its URL out of the version, so the file it points at is this release by
+  # construction. That only holds while the name matches; if it stops, the cask goes stale quietly.
+  grep -qF 'downloads/OnCue-#{version}.zip' "$cask" ||
+    fail "$cask no longer builds its url from #{version}. Updating version alone would point it at the wrong file"
+  # The cask quits the app by bundle ID and clears its container by bundle ID, and neither shows
+  # up at install time: a cask naming an ID the app doesn't have installs perfectly, then fails
+  # to quit a running copy and leaves its container behind. The ID has already moved once, from
+  # lol.jva.oncue to com.eggdevil.oncue, and nothing caught it. Mentioned rather than equal,
+  # because the cask carries the old IDs too so copies installed under them still get cleaned up.
+  grep -qF "\"$bundle_id\"" "$cask" ||
+    fail "$cask never mentions $bundle_id, so it would not quit or clean up this build.
+  Add it to the uninstall and zap stanzas, keeping the older IDs alongside it"
+fi
+
+# Two releases carrying the same CFBundleVersion is invisible until something compares builds, and
+# 4.5 nearly shipped as another 845. The trap is that the build phase bumps OnCue/Info.plist after
+# the value has been baked in, so the number a release ships with is the one sitting in the source
+# file before the build, not one past it. Ask the zips already released what they claim to be.
+mkdir -p "$work"
+released_build=0
+for released in site/downloads/OnCue-*.zip; do
+  [ -f "$released" ] || continue
+  unzip -p "$released" 'OnCue.app/Contents/Info.plist' >"$work/released.plist" 2>/dev/null || continue
+  claimed=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$work/released.plist" 2>/dev/null) || continue
+  case "$claimed" in '' | *[!0-9]*) continue ;; esac
+  [ "$claimed" -gt "$released_build" ] && released_build=$claimed
+done
+
+source_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" OnCue/Info.plist)
+[ "$source_build" -gt "$released_build" ] ||
+  fail "OnCue/Info.plist says build $source_build and $released_build has already shipped. Set it past that first:
+  /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $((released_build + 1))\" OnCue/Info.plist"
+
+if [ "$APP_STORE" = 0 ]; then
+  step "releasing $version as team $TEAM (direct download only; APP_STORE is unset)"
+else
+  step "releasing $version as team $TEAM, then the App Store ($APP_STORE)"
+fi
+
+# --- The gate ---------------------------------------------------------------------------------
+
+scripts/check || fail "scripts/check failed"
+
+# --- Archive and export -----------------------------------------------------------------------
+
+mkdir -p "$work"
+rm -rf "$archive" "$export_dir"
+
+cat >"$options" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>developer-id</string>
+	<key>teamID</key>
+	<string>$TEAM</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>
+PLIST
+
+step "archiving (log: $log)"
+xcodebuild -project OnCue.xcodeproj -scheme OnCue -configuration Release \
+  -destination 'platform=macOS' -archivePath "$archive" \
+  DEVELOPMENT_TEAM="$TEAM" archive >"$log" 2>&1 ||
+  fail "archive failed (full log: $log)"
+
+step "exporting"
+xcodebuild -exportArchive -archivePath "$archive" -exportPath "$export_dir" \
+  -exportOptionsPlist "$options" >>"$log" 2>&1 ||
+  fail "export failed (full log: $log)"
+
+app="$export_dir/OnCue.app"
+[ -d "$app" ] || fail "no OnCue.app in the export"
+
+# --- Is it actually signed the way we think? ---------------------------------------------------
+
+step "checking the signature"
+codesign --verify --deep --strict --verbose=2 "$app" >>"$log" 2>&1 ||
+  fail "signature doesn't verify (full log: $log)"
+
+details=$(codesign -dvv "$app" 2>&1)
+echo "$details" | grep -q "Authority=$IDENTITY" ||
+  fail "not signed with a $IDENTITY certificate"
+echo "$details" | grep -q "TeamIdentifier=$TEAM" ||
+  fail "signed by a team other than $TEAM"
+echo "$details" | grep -q "flags=.*runtime" ||
+  fail "hardened runtime is off, so notarization would be rejected"
+
+built=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist")
+[ "$built" = "$version" ] || fail "the built app says $built, not $version"
+
+# The cask was checked against what the project said the ID would be. This is what it came out as.
+built_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Contents/Info.plist")
+[ "$built_id" = "$bundle_id" ] ||
+  fail "the built app is $built_id and the project said $bundle_id, so the cask was checked against the wrong ID"
+
+# The build phase bumps OnCue/Info.plist after the value has been baked into the bundle, so the
+# source file ends up one ahead of what shipped. Take the number from the app and put it back in
+# the source, so the repo records the build that exists rather than one that doesn't.
+shipped_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$app/Contents/Info.plist")
+# The preflight checked the source file; this checks what the build actually came out as, before
+# anything is sent to Apple or copied into the site.
+[ "$shipped_build" -gt "$released_build" ] ||
+  fail "this build says $shipped_build, and $released_build has already shipped. Nothing was notarized"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $shipped_build" OnCue/Info.plist
+
+# --- Notarize, staple, package -----------------------------------------------------------------
+
+zip="$work/$zip_name"
+rm -f "$zip"
+ditto -c -k --keepParent "$app" "$zip" || fail "couldn't make the zip"
+
+step "notarizing (this waits on Apple, usually a few minutes)"
+xcrun notarytool submit "$zip" --keychain-profile "$PROFILE" --wait >>"$log" 2>&1 ||
+  fail "notarization failed. 'xcrun notarytool log <id> --keychain-profile $PROFILE' says why (ids in $log)"
+tail -20 "$log" | grep -q "status: Accepted" ||
+  fail "notarization didn't come back Accepted (full log: $log)"
+
+step "stapling"
+xcrun stapler staple "$app" >>"$log" 2>&1 || fail "stapling failed (full log: $log)"
+xcrun stapler validate "$app" >>"$log" 2>&1 || fail "the staple doesn't validate"
+
+# Gatekeeper's own verdict, on the stapled app, offline: what a first launch will do.
+verdict=$(spctl -a -vvv -t exec "$app" 2>&1)
+echo "$verdict" | grep -q "source=Notarized Developer ID" ||
+  fail "Gatekeeper wouldn't accept this build: $verdict"
+
+# Zip again, so the file people download is the stapled one.
+rm -f "$zip"
+ditto -c -k --keepParent "$app" "$zip" || fail "couldn't make the final zip"
+
+mkdir -p site/downloads
+cp "$zip" "$destination" || fail "couldn't copy the zip into site/downloads"
+
+# --- Update the cask ----------------------------------------------------------------------------
+
+# The hash has to come from the file that shipped, not the one in $work: they are the same bytes
+# today, and a cask pinned to a hash nobody can reproduce from the download is the one failure
+# mode here that looks fine until someone tries to install it.
+sha=$(shasum -a 256 "$destination" | cut -d' ' -f1)
+[ -n "$sha" ] || fail "couldn't hash $destination"
+
+if [ "$SKIP_TAP" = 1 ]; then
+  step "SKIP_TAP=1: the cask still points wherever it did. sha256 for it is $sha"
+else
+  step "pointing the cask at $version"
+  sed -e "s/^  version \".*\"$/  version \"$version\"/" \
+      -e "s/^  sha256 \".*\"$/  sha256 \"$sha\"/" \
+      "$cask" >"$work/oncue.rb" || fail "couldn't rewrite $cask"
+
+  # Read back what was written rather than trusting sed to have matched anything. A sed that
+  # matches nothing exits 0 and leaves the old version in place, which is the stale cask this
+  # whole section exists to prevent.
+  grep -qF "  version \"$version\"" "$work/oncue.rb" ||
+    fail "the rewritten cask doesn't say version $version. $cask is unchanged"
+  grep -qF "  sha256 \"$sha\"" "$work/oncue.rb" ||
+    fail "the rewritten cask doesn't carry this build's sha256. $cask is unchanged"
+  cp "$work/oncue.rb" "$cask" || fail "couldn't write $cask"
+
+  # brew is not required to cut a release, but when it is here it catches a cask that parses but
+  # won't install long before a user does.
+  if command -v brew >/dev/null 2>&1; then
+    brew style "$cask" >>"$log" 2>&1 || fail "brew style rejects the updated cask (full log: $log)"
+  fi
+fi
+
+size=$(du -h "$destination" | cut -f1 | tr -d ' ')
+echo
+step "$version is ready: $destination ($size)"
+echo "  signed:   $(echo "$details" | grep "Authority=$IDENTITY" | head -1 | cut -d= -f2-)"
+echo "  notarized and stapled, Gatekeeper accepts it offline"
+echo "  the site should say version $version and $(date +%Y-%m-%d)"
+echo "  CFBundleVersion $shipped_build is what's inside this build. Keep it."
+echo
+if [ "$SKIP_TAP" = 1 ]; then
+  echo "  the cask was left alone (SKIP_TAP=1). sha256 for it is $sha"
+else
+  echo "  $cask now points at $version, sha256 $sha"
+fi
+echo "  push this repo and the tap, then: scripts/check-tap"
+echo "  until both are pushed, brew still installs the old version."
+
+# --- The App Store, from the same archive ------------------------------------------------------
+
+[ "$APP_STORE" = 0 ] && exit 0
+store
+[ "$APP_STORE" = submit ] || exit 0
+
+# --- The listing and the review, from the repo (spec 0057) --------------------------------------
+
+echo
+step "the store listing and review for $version (this waits on Apple's processing)"
+python3 scripts/store "$version" ||
+  fail "the store step didn't finish; the line above says why. The build is uploaded, so once it's
+  resolved (a review slot clears on its own) run: scripts/store $version"

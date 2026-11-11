@@ -1,0 +1,27 @@
+# osx noise
+.DS_Store
+profile
+
+# xcode noise
+build/*
+*.mode1
+*.mode1v3
+*.mode2v3
+*.perspective
+*.perspectivev3
+*.pbxuser
+xcuserdata/
+*.xccheckout
+
+
+# claude: commands are tracked; memory and machine-local state are not. Memory holds private
+# notes, and this repo is public.
+.claude/memory/
+.claude/settings.local.json
+.claude/worktrees/
+
+# site functions: npm installs these, Netlify builds them
+node_modules/
+
+# Local Netlify folder
+.netlify

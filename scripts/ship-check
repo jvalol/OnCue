@@ -1,0 +1,23 @@
+#!/bin/sh
+# Fails while any copy marker remains in files that ship (the app, its resources, the site, the README).
+# Specs, CLAUDE.md, .claude/ and scripts/ reference the marker on purpose and are not scanned.
+# The marker is built from parts so this script never matches itself.
+marker="[COPY"" - Jake]"
+cd "$(dirname "$0")/.." || exit 2
+hits=$(git ls-files -co --exclude-standard -- OnCue site README.md | while IFS= read -r f; do
+  [ -f "$f" ] && grep -F -n -H -- "$marker" "$f"
+done)
+if [ -n "$hits" ]; then
+  echo "ship-check: copy markers remain:"
+  echo "$hits"
+  exit 1
+fi
+echo "ship-check: no copy markers"
+
+# The second gate: the copy files named in .copy-files carry Jake's signature in .copy-signed
+# (~/.claude/voice). A struck marker says a draft was read once; the signature says these bytes
+# were. Skipped where the tool isn't installed, so the repo still builds on another machine.
+voice="$HOME/.claude/voice/check-voice"
+if [ -x "$voice" ]; then
+  "$voice" || exit 1
+fi

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Serves site/ locally, the way Netlify serves it: plain static files, no build step.
+#
+# Opening site/index.html as a file is not the same thing. The stylesheets load by relative path
+# and some browsers refuse them from file://, and a page rendered without its styles is exactly the
+# condition under which layout bugs are invisible. Two of them were found only once the site was
+# served. Stop with control-C.
+#
+#   scripts/site         # http://localhost:8765
+#   scripts/site 3000    # another port
+set -u
+cd "$(dirname "$0")/.." || exit 2
+
+port="${1:-8765}"
+
+command -v python3 >/dev/null 2>&1 || { echo "site: python3 is needed to serve the folder" >&2; exit 1; }
+
+echo "site: serving site/ at http://localhost:$port (control-C to stop)"
+exec python3 -m http.server "$port" --directory site

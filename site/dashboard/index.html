@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>OnCue - Dashboard</title>
+<link rel="icon" type="image/png" href="../icon.png">
+<!--
+  Private dashboard for spec 0052. Behind a password (netlify/edge-functions/dashboard-auth.ts);
+  the numbers come from /api/stats. Self-contained on purpose: the marketing site's stylesheets
+  and scripts are for the public pages, and nothing here should break when they change.
+-->
+<style>
+.viz-root {
+	color-scheme: light;
+	--page: #f4f4f2;
+	--surface-1: #fcfcfb;
+	--border: #e4e3df;
+	--grid: #ecebe7;
+	--axis: #c9c8c2;
+	--text-primary: #0b0b0b;
+	--text-secondary: #52514e;
+	--text-muted: #75746f;
+	--hover-wash: rgba(11, 11, 11, 0.05);
+	--series-1: #2a78d6; /* blue: Homebrew, and every single-series chart */
+	--series-2: #eb6834; /* orange: browser */
+	--critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+	.viz-root {
+		color-scheme: dark;
+		--page: #111110;
+		--surface-1: #1a1a19;
+		--border: #2c2c2a;
+		--grid: #262624;
+		--axis: #45443f;
+		--text-primary: #ffffff;
+		--text-secondary: #c3c2b7;
+		--text-muted: #97968e;
+		--hover-wash: rgba(255, 255, 255, 0.07);
+		--series-1: #3987e5;
+		--series-2: #d95926;
+	}
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body.viz-root {
+	background: var(--page);
+	color: var(--text-primary);
+	font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+main { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 24px; margin-bottom: 20px; }
+h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
+h1 a { color: inherit; text-decoration: none; }
+.since { color: var(--text-muted); font-size: 13px; margin: 0; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
+.range { display: inline-flex; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+.range button {
+	appearance: none; border: 0; background: transparent; color: var(--text-secondary);
+	font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+}
+.range button:hover { background: var(--hover-wash); }
+.range button[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); font-weight: 600; }
+.range button:focus-visible, .chart svg:focus-visible, summary:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+.error { border: 1px solid var(--critical); color: var(--text-primary); background: var(--surface-1); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; }
+.error strong { color: var(--critical); }
+
+#content { transition: opacity 120ms; }
+#content.loading { opacity: 0.5; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.tile, .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; }
+.tile { padding: 14px 16px; }
+.tile .label { color: var(--text-secondary); font-size: 13px; }
+.tile .value { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
+.tile .note { color: var(--text-muted); font-size: 12px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.card { padding: 16px; min-width: 0; }
+.card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+.card .sub { color: var(--text-muted); font-size: 12px; margin: 0 0 10px; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 0 0 8px; padding: 0; list-style: none; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend .key { width: 10px; height: 10px; border-radius: 2px; }
+
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--axis); stroke-width: 1; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .hit.active { fill: var(--hover-wash); }
+.empty { color: var(--text-muted); font-size: 13px; padding: 24px 0; text-align: center; }
+
+.tooltip {
+	position: absolute; pointer-events: none; z-index: 2; min-width: 120px;
+	background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); padding: 8px 10px; font-size: 12px;
+}
+.tooltip[hidden] { display: none; }
+.tooltip .when { color: var(--text-muted); margin-bottom: 4px; }
+.tooltip .row { display: flex; align-items: center; gap: 8px; }
+.tooltip .row + .row { margin-top: 2px; }
+.tooltip .swatch { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+.tooltip .num { font-weight: 650; font-variant-numeric: tabular-nums; min-width: 2.5em; }
+.tooltip .name { color: var(--text-secondary); }
+
+.bars { list-style: none; margin: 0; padding: 0; }
+.bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 5px 4px; border-radius: 6px; }
+.bars li:hover { background: var(--hover-wash); }
+.bars .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.bars .num { color: var(--text-secondary); font-variant-numeric: tabular-nums; text-align: right; }
+.bars .track { grid-column: 1 / -1; height: 6px; }
+.bars .fill { height: 6px; background: var(--series-1); border-radius: 0 4px 4px 0; min-width: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+td { color: var(--text-primary); }
+tbody tr:hover td { background: var(--hover-wash); }
+
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+details .card { margin-top: 10px; max-height: 420px; overflow: auto; }
+
+footer { color: var(--text-muted); font-size: 12px; margin-top: 24px; }
+
+@media (max-width: 800px) {
+	.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body class="viz-root">
+<main>
+	<header>
+		<h1><a href="../">OnCue</a> dashboard</h1>
+		<p class="since" id="since"></p>
+	</header>
+
+	<div class="filters">
+		<div class="range" role="group" aria-label="Date range">
+			<button type="button" data-range="7">7 days</button>
+			<button type="button" data-range="30">30 days</button>
+			<button type="button" data-range="90">90 days</button>
+			<button type="button" data-range="all">All time</button>
+		</div>
+	</div>
+
+	<div class="error" id="error" hidden></div>
+
+	<div id="content">
+		<section class="tiles" aria-label="Totals">
+			<div class="tile"><div class="label">Downloads</div><div class="value" id="t-downloads">–</div><div class="note">zip files served</div></div>
+			<div class="tile"><div class="label">Through Homebrew</div><div class="value" id="t-brew">–</div><div class="note" id="t-brew-share">&nbsp;</div></div>
+			<div class="tile"><div class="label">From the website</div><div class="value" id="t-browser">–</div><div class="note" id="t-browser-share">&nbsp;</div></div>
+			<div class="tile"><div class="label">Page views</div><div class="value" id="t-views">–</div><div class="note">home, help, changelog, privacy, check, guide</div></div>
+		</section>
+
+		<section class="card">
+			<h2>Downloads per day</h2>
+			<p class="sub">By how the zip was fetched</p>
+			<ul class="legend">
+				<li><span class="key" style="background: var(--series-1)"></span>Homebrew</li>
+				<li><span class="key" style="background: var(--series-2)"></span>Website</li>
+			</ul>
+			<div class="chart" id="c-downloads"></div>
+		</section>
+
+		<section class="card" style="margin-top: 12px">
+			<h2>Page views per day</h2>
+			<p class="sub">Every counted page, together</p>
+			<div class="chart" id="c-views"></div>
+		</section>
+
+		<div class="grid2">
+			<section class="card">
+				<h2>Downloads by version</h2>
+				<p class="sub">Newest first</p>
+				<ul class="bars" id="c-versions"></ul>
+			</section>
+			<section class="card">
+				<h2>Pages</h2>
+				<p class="sub">Views in the range</p>
+				<ul class="bars" id="c-pages"></ul>
+			</section>
+			<section class="card">
+				<h2>Referrers</h2>
+				<p class="sub">Sites that sent visitors here, top 10</p>
+				<ul class="bars" id="c-referrers"></ul>
+			</section>
+			<section class="card">
+				<h2>Countries</h2>
+				<p class="sub">Top 12 by downloads and views together</p>
+				<table>
+					<thead><tr><th scope="col">Country</th><th scope="col">Downloads</th><th scope="col">Views</th></tr></thead>
+					<tbody id="c-countries"></tbody>
+				</table>
+			</section>
+		</div>
+
+		<details>
+			<summary>Show every day as a table</summary>
+			<div class="card">
+				<table>
+					<thead><tr><th scope="col">Day</th><th scope="col">Homebrew</th><th scope="col">Website</th><th scope="col">Downloads</th><th scope="col">Page views</th></tr></thead>
+					<tbody id="c-table"></tbody>
+				</table>
+			</div>
+		</details>
+	</div>
+
+	<footer>Counts only: no IP addresses, no cookies, nothing that ties two requests to one person. Rows are kept for a year. The OnCue app itself sends nothing.</footer>
+</main>
+
+<script>
+(function () {
+	"use strict";
+
+	var SVG = "http://www.w3.org/2000/svg";
+	var numberFormat = new Intl.NumberFormat("en-US");
+	var dayLong = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+	var dayShort = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+	var countryNames = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+	var PAGE_NAMES = { "/": "Home", "/help/": "Help", "/changelog/": "Changelog", "/privacy/": "Privacy", "/check/": "Check", "/mac-security-camera/": "Guide" };
+
+	var content = document.getElementById("content");
+	var errorBox = document.getElementById("error");
+	var buttons = Array.prototype.slice.call(document.querySelectorAll(".range button"));
+	var current = null;
+	var request = 0;
+
+	function $(id) { return document.getElementById(id); }
+	function fmt(n) { return numberFormat.format(n); }
+	function asDate(day) { return new Date(day + "T00:00:00Z"); }
+	function el(tag, attrs, text) {
+		var node = document.createElement(tag);
+		for (var key in attrs || {}) node.setAttribute(key, attrs[key]);
+		if (text != null) node.textContent = text;
+		return node;
+	}
+	function svgEl(tag, attrs) {
+		var node = document.createElementNS(SVG, tag);
+		for (var key in attrs) node.setAttribute(key, attrs[key]);
+		return node;
+	}
+	function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+	// Ticks at 1, 2 or 5 times a power of ten, whole numbers only: these are counts.
+	function niceMax(max) {
+		if (max <= 4) return { top: Math.max(max, 1), step: 1 };
+		var rough = max / 4;
+		var power = Math.pow(10, Math.floor(Math.log10(rough)));
+		var step = [1, 2, 5, 10].map(function (m) { return m * power; }).find(function (s) { return s >= rough; });
+		return { top: Math.ceil(max / step) * step, step: step };
+	}
+
+	// A bar whose top corners are rounded and whose base sits square on the baseline.
+	function barPath(x, y, w, h, r) {
+		r = Math.min(r, w / 2, h);
+		if (h <= 0) return "";
+		return "M" + x + "," + (y + h) + "V" + (y + r) + "Q" + x + "," + y + " " + (x + r) + "," + y +
+			"H" + (x + w - r) + "Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) + "V" + (y + h) + "Z";
+	}
+
+	// Stacked daily columns. series: [{ key, name, color }], bottom first.
+	function columnChart(container, days, series) {
+		clear(container);
+		var total = days.reduce(function (sum, d) { return sum + series.reduce(function (s, x) { return s + d[x.key]; }, 0); }, 0);
+		if (!days.length || total === 0) {
+			container.appendChild(el("div", { "class": "empty" }, "Nothing counted in this range yet."));
+			return;
+		}
+
+		// Drawn at the card's real width, so labels stay 11px on a phone as on a desktop.
+		var W = Math.max(Math.round(container.clientWidth), 280), H = W < 600 ? 180 : 220;
+		var left = 36, right = 8, top = 10, bottom = 24;
+		var plotW = W - left - right, plotH = H - top - bottom;
+		var max = Math.max.apply(null, days.map(function (d) { return series.reduce(function (s, x) { return s + d[x.key]; }, 0); }));
+		var scale = niceMax(max);
+		var slot = plotW / days.length;
+		var gap = slot > 6 ? Math.min(Math.max(slot * 0.25, 2), 12) : 1;
+		var barW = Math.max(slot - gap, 1);
+		var y = function (v) { return top + plotH - (v / scale.top) * plotH; };
+
+		var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, role: "img", tabindex: "0" });
+		svg.setAttribute("aria-label", container.getAttribute("data-label") || "Daily chart. Use the left and right arrow keys to read each day.");
+
+		for (var v = 0; v <= scale.top; v += scale.step) {
+			if (v > 0) svg.appendChild(svgEl("line", { "class": "gridline", x1: left, x2: W - right, y1: y(v), y2: y(v) }));
+			var label = svgEl("text", { x: left - 8, y: y(v) + 4, "text-anchor": "end" });
+			label.textContent = fmt(v);
+			svg.appendChild(label);
+		}
+
+		// A date label every 90px or so, whatever the range.
+		var every = Math.max(1, Math.ceil(days.length / Math.max(2, Math.floor(plotW / 90))));
+		days.forEach(function (d, i) {
+			if (i % every !== 0 && i !== days.length - 1) return;
+			if (i === days.length - 1 && i % every !== 0 && i % every < every / 2) return;
+			var tick = svgEl("text", { x: left + slot * i + slot / 2, y: H - 6, "text-anchor": "middle" });
+			tick.textContent = dayShort.format(asDate(d.day));
+			svg.appendChild(tick);
+		});
+
+		var hits = [];
+		days.forEach(function (d, i) {
+			var x = left + slot * i + (slot - barW) / 2;
+			var hit = svgEl("rect", { "class": "hit", x: left + slot * i, y: top, width: slot, height: plotH });
+			svg.appendChild(hit);
+			hits.push(hit);
+
+			var visible = series.filter(function (s) { return d[s.key] > 0; });
+			var base = 0;
+			visible.forEach(function (s, j) {
+				var y0 = y(base), y1 = y(base + d[s.key]);
+				// A 2px surface gap between stacked segments.
+				var segTop = y1, segBottom = j === 0 ? y0 : y0 - 2;
+				var h = Math.max(segBottom - segTop, 1);
+				var isTop = j === visible.length - 1;
+				svg.appendChild(isTop
+					? svgEl("path", { d: barPath(x, segTop, barW, h, Math.min(4, barW / 2)), fill: s.color, "pointer-events": "none" })
+					: svgEl("rect", { x: x, y: segTop, width: barW, height: h, fill: s.color, "pointer-events": "none" }));
+				base += d[s.key];
+			});
+		});
+
+		svg.appendChild(svgEl("line", { "class": "baseline", x1: left, x2: W - right, y1: top + plotH, y2: top + plotH }));
+		container.appendChild(svg);
+
+		var tip = el("div", { "class": "tooltip", hidden: "" });
+		container.appendChild(tip);
+		var active = -1;
+
+		function show(i) {
+			if (active >= 0) hits[active].classList.remove("active");
+			active = i;
+			hits[i].classList.add("active");
+			var d = days[i];
+			clear(tip);
+			tip.appendChild(el("div", { "class": "when" }, dayLong.format(asDate(d.day))));
+			series.slice().reverse().forEach(function (s) {
+				var row = el("div", { "class": "row" });
+				var swatch = el("span", { "class": "swatch" });
+				swatch.style.background = s.color;
+				row.appendChild(swatch);
+				row.appendChild(el("span", { "class": "num" }, fmt(d[s.key])));
+				row.appendChild(el("span", { "class": "name" }, s.name));
+				tip.appendChild(row);
+			});
+			if (series.length > 1) {
+				var totalRow = el("div", { "class": "row" });
+				totalRow.appendChild(el("span", { "class": "swatch" }));
+				totalRow.appendChild(el("span", { "class": "num" }, fmt(series.reduce(function (sum, s) { return sum + d[s.key]; }, 0))));
+				totalRow.appendChild(el("span", { "class": "name" }, "Total"));
+				tip.appendChild(totalRow);
+			}
+			tip.hidden = false;
+			var box = svg.getBoundingClientRect();
+			var ratio = box.width / W;
+			var cx = (left + slot * i + slot / 2) * ratio;
+			var tipW = tip.offsetWidth;
+			var x = cx + 12 + tipW > box.width ? cx - 12 - tipW : cx + 12;
+			tip.style.left = Math.max(0, x) + "px";
+			tip.style.top = Math.max(0, top * ratio) + "px";
+		}
+		function hide() {
+			if (active >= 0) hits[active].classList.remove("active");
+			active = -1;
+			tip.hidden = true;
+		}
+
+		svg.addEventListener("pointermove", function (event) {
+			var box = svg.getBoundingClientRect();
+			var px = (event.clientX - box.left) * (W / box.width);
+			var i = Math.floor((px - left) / slot);
+			if (i < 0 || i >= days.length) return hide();
+			if (i !== active) show(i);
+		});
+		svg.addEventListener("pointerleave", hide);
+		svg.addEventListener("blur", hide);
+		svg.addEventListener("focus", function () { show(days.length - 1); });
+		svg.addEventListener("keydown", function (event) {
+			if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+				event.preventDefault();
+				var next = (active < 0 ? days.length - 1 : active) + (event.key === "ArrowLeft" ? -1 : 1);
+				show(Math.min(days.length - 1, Math.max(0, next)));
+			} else if (event.key === "Escape") {
+				hide();
+			}
+		});
+	}
+
+	function barList(list, rows, nameOf, emptyText) {
+		clear(list);
+		if (!rows.length) {
+			list.appendChild(el("li", { "class": "empty" }, emptyText));
+			return;
+		}
+		var max = Math.max.apply(null, rows.map(function (r) { return r.n; }));
+		rows.forEach(function (r) {
+			var item = el("li");
+			item.appendChild(el("span", { "class": "name", title: nameOf(r) }, nameOf(r)));
+			item.appendChild(el("span", { "class": "num" }, fmt(r.n)));
+			var track = el("div", { "class": "track" });
+			var fill = el("div", { "class": "fill" });
+			fill.style.width = (r.n / max) * 100 + "%";
+			track.appendChild(fill);
+			item.appendChild(track);
+			list.appendChild(item);
+		});
+	}
+
+	function share(part, whole) {
+		return whole ? Math.round((part / whole) * 100) + "% of downloads" : " ";
+	}
+
+	function render(data) {
+		$("t-downloads").textContent = fmt(data.totals.downloads);
+		$("t-brew").textContent = fmt(data.totals.brew);
+		$("t-browser").textContent = fmt(data.totals.browser);
+		$("t-views").textContent = fmt(data.totals.views);
+		$("t-brew-share").textContent = share(data.totals.brew, data.totals.downloads);
+		$("t-browser-share").textContent = share(data.totals.browser, data.totals.downloads);
+		$("since").textContent = data.countingSince
+			? "Counting since " + dayLong.format(asDate(data.countingSince)) + ". Nothing before that was recorded."
+			: "Nothing counted yet. Counting starts with the first download or page view after deploy.";
+
+		var root = getComputedStyle(document.body);
+		var blue = root.getPropertyValue("--series-1").trim();
+		var orange = root.getPropertyValue("--series-2").trim();
+
+		columnChart($("c-downloads"), data.daily, [
+			{ key: "brew", name: "Homebrew", color: blue },
+			{ key: "browser", name: "Website", color: orange },
+		]);
+		columnChart($("c-views"), data.daily, [{ key: "views", name: "Page views", color: blue }]);
+
+		barList($("c-versions"), data.versions, function (r) { return "OnCue " + r.version; }, "No downloads in this range.");
+		barList($("c-pages"), data.pages, function (r) { return PAGE_NAMES[r.path] || r.path; }, "No page views in this range.");
+		barList($("c-referrers"), data.referrers, function (r) { return r.host; }, "No referred visits in this range.");
+
+		var countries = $("c-countries");
+		clear(countries);
+		if (!data.countries.length) {
+			var none = el("tr");
+			none.appendChild(el("td", { colspan: "3", "class": "empty" }, "No locations in this range."));
+			countries.appendChild(none);
+		}
+		data.countries.forEach(function (c) {
+			var row = el("tr");
+			var name = countryNames ? countryNames.of(c.country) : c.country;
+			row.appendChild(el("td", null, name || c.country));
+			row.appendChild(el("td", null, fmt(c.downloads)));
+			row.appendChild(el("td", null, fmt(c.views)));
+			countries.appendChild(row);
+		});
+
+		var table = $("c-table");
+		clear(table);
+		data.daily.slice().reverse().forEach(function (d) {
+			var row = el("tr");
+			row.appendChild(el("td", null, dayLong.format(asDate(d.day))));
+			row.appendChild(el("td", null, fmt(d.brew)));
+			row.appendChild(el("td", null, fmt(d.browser)));
+			row.appendChild(el("td", null, fmt(d.brew + d.browser)));
+			row.appendChild(el("td", null, fmt(d.views)));
+			table.appendChild(row);
+		});
+
+		current = data;
+	}
+
+	function load(range) {
+		buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-range") === range)); });
+		try { history.replaceState(null, "", "?range=" + range); } catch (e) {}
+		content.classList.add("loading");
+		var mine = ++request;
+		fetch("/api/stats?range=" + encodeURIComponent(range), { credentials: "same-origin", cache: "no-store" })
+			.then(function (response) {
+				if (!response.ok) return response.text().then(function (text) { throw new Error(text.trim() || response.status + " " + response.statusText); });
+				return response.json();
+			})
+			.then(function (data) {
+				if (mine !== request) return;
+				errorBox.hidden = true;
+				render(data);
+			})
+			.catch(function (error) {
+				if (mine !== request) return;
+				clear(errorBox);
+				errorBox.appendChild(el("strong", null, "Couldn't load the numbers. "));
+				errorBox.appendChild(document.createTextNode(error.message));
+				errorBox.hidden = false;
+			})
+			.then(function () { if (mine === request) content.classList.remove("loading"); });
+	}
+
+	buttons.forEach(function (b) {
+		b.addEventListener("click", function () { load(b.getAttribute("data-range")); });
+	});
+
+	// The charts are drawn to the card's width, so a resize redraws them. So does a theme
+	// change, since the series colours are read from CSS.
+	var repaint = function () { if (current) render(current); };
+	var resizeTimer = null;
+	var lastWidth = window.innerWidth;
+	window.addEventListener("resize", function () {
+		if (window.innerWidth === lastWidth) return;
+		lastWidth = window.innerWidth;
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(repaint, 150);
+	});
+	if (window.matchMedia) {
+		var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+		if (scheme.addEventListener) scheme.addEventListener("change", repaint);
+	}
+
+	var initial = new URLSearchParams(location.search).get("range");
+	load(["7", "30", "90", "all"].indexOf(initial) >= 0 ? initial : "30");
+})();
+</script>
+</body>
+</html>

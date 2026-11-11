@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>OnCue - Check it yourself</title>
+
+  <meta name="description"
+    content="How to make macOS show what OnCue is allowed to do, and that a network connection isn't on the list.">
+
+  <link rel="icon" type="image/png" href="../icon.png">
+
+  <link rel="stylesheet" href="../stylesheets/foundation.css">
+  <link rel="stylesheet" href="../stylesheets/animate.css">
+  <link rel="stylesheet" href="../stylesheets/entypo.css">
+  <link rel="stylesheet" href="../stylesheets/style.css">
+  <link rel="stylesheet" href="../stylesheets/responsive.css">
+  <link href="https://fonts.googleapis.com/css?family=Rationale" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700|Montserrat:400,700" rel="stylesheet"
+    type="text/css">
+
+  <script src="../javascripts/modernizr.foundation.js"></script>
+</head>
+
+<body>
+  <div id="main-container">
+    <div id="main-nav">
+      <div class="row">
+        <div class="twelve columns">
+          <div id="logo" class="left">
+            <h5 class="alt-h"><a href="../">OnCue</a></h5>
+          </div>
+          <div id="mobile-toggle" class="show-for-small"><i class="entypo list"></i></div>
+          <div id="nav-holder" class="right">
+            <ul>
+              <li><a href="../">HOME</a></li>
+              <li><a href="../help/">HELP</a></li>
+              <li><a href="../changelog/">CHANGELOG</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="feature-list" class="even-section">
+      <div class="row inner-section">
+        <h2>Check it yourself</h2>
+
+        <div class="row">
+          <div class="eight columns centered feature text-center">
+            <p>OnCue says nothing leaves your Mac. This page is how to have macOS say it instead of
+              me: one command, the five lines it prints, and the line that isn't there.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="twelve columns feature">
+            <h3>The command</h3>
+            <p>With OnCue installed, paste this into Terminal. It asks macOS to print the permissions
+              sealed into the copy on your disk.</p>
+            <pre class="install-command"><code>codesign -d --entitlements - --xml /Applications/OnCue.app | plutil -p -</code></pre>
+            <pre class="install-output"><code>Executable=/Applications/OnCue.app/Contents/MacOS/OnCue
+{
+  "com.apple.security.app-sandbox" => true
+  "com.apple.security.assets.movies.read-write" => true
+  "com.apple.security.device.audio-input" => true
+  "com.apple.security.device.camera" => true
+  "com.apple.security.files.user-selected.read-write" => true
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="twelve columns feature">
+            <h3>What each line means</h3>
+            <p><code>app-sandbox</code> puts OnCue in the App Sandbox. From then on the kernel allows what the
+              rest of the list says and refuses everything else, whatever the app asks for.</p>
+            <p><code>assets.movies.read-write</code> is your Movies folder, where recordings go unless you
+              choose somewhere else. <code>files.user-selected.read-write</code> is the somewhere else: a folder
+              you pick in a file dialog, and only that one.</p>
+            <p><code>device.camera</code> and <code>device.audio-input</code> are the camera and the microphone.
+              Even with these, macOS asks you the first time, and you can take either back in System
+              Settings.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="twelve columns feature">
+            <h3>What isn't there</h3>
+            <p>An app that opens a connection needs <code>com.apple.security.network.client</code>, and one
+              that accepts connections needs <code>network.server</code>. OnCue has neither. Without them the
+              sandbox refuses a connection before it starts, so there is no server for a recording to reach,
+              no way to send a report, and no way for OnCue to check for its own updates. That isn't a
+              promise about what the app chooses to do. It's a property of the file.</p>
+            <p>To see what the line looks like when it's present, run the same command on any other app
+              in your Applications folder that uses the internet. Most print
+              <code>"com.apple.security.network.client" => true</code> somewhere in the list.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="twelve columns feature">
+            <h3>Why the list can't lie</h3>
+            <p>The entitlements are part of the code signature. Change one and the signature no longer
+              matches, macOS refuses to open the app, and the App Store copy won't launch at all. So the
+              list you print is the list I signed, and the signature says who that was:</p>
+            <pre class="install-command"><code>codesign -dvv /Applications/OnCue.app</code></pre>
+            <p>The copy from this site shows <code>Developer ID Application: JACOB VANALSTYNE (DC3U4XZMM4)</code>.
+              The App Store copy is signed by Apple on my behalf and carries the same five lines, plus two
+              that Apple adds to every store app naming the app and the team.</p>
+            <p class="release-meta">The output above is from OnCue 4.22. The list hasn't changed since 4.0, and a
+              change to it would be in the <a href="../changelog/">changelog</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="footer">
+      <div class="row inner-section">
+        <div class="four columns">
+          <h5 class="footer-title">NAVIGATE</h5>
+          <ul>
+            <li><a href="../">HOME</a></li>
+            <li><a href="../help/">HELP</a></li>
+            <li><a href="../changelog/">CHANGELOG</a></li>
+          </ul>
+        </div>
+
+        <div class="four columns">
+          <h5 class="footer-title">ABOUT</h5>
+          <p>
+            OnCue is made by <a href="https://jva.lol">Jake Van Alstyne</a> in Salt Lake
+            City, Utah.
+          </p>
+          <p>
+            It's free, and it stays free. If it's earned it, there's a
+            <a href="https://github.com/sponsors/jvalol">tip jar</a>.
+          </p>
+        </div>
+        <div class="three columns text-right">
+          <h3 class="footer-title">OnCue</h3>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="../javascripts/jquery.js"></script>
+  <script src="../javascripts/foundation.min.js"></script>
+  <script src="../javascripts/inview.js"></script>
+  <script src="../javascripts/scripts.js"></script>
+</body>
+
+</html>

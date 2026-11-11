@@ -1,0 +1,16 @@
+#!/bin/sh
+# Redraws site/images/screenshot-menubar.png, the strip of menu bar icon states on the help page,
+# using the app's own MenuBarIcon code. Run it whenever the icon changes, so the picture on the
+# site is what the app draws rather than a screenshot that drifts.
+set -u
+cd "$(dirname "$0")/.." || exit 2
+
+out="${1:-site/images/screenshot-menubar.png}"
+work="${TMPDIR:-/tmp}/oncue-render-menubar"
+mkdir -p "$work"
+
+# swiftc wants top-level code in a file called main.swift.
+cp scripts/render-menubar.swift "$work/main.swift"
+swiftc -O OnCue/Managers/Helpers/MenuBarIcon.swift "$work/main.swift" -o "$work/render" ||
+  { echo "render-menubar: couldn't compile the renderer" >&2; exit 1; }
+"$work/render" "$out"

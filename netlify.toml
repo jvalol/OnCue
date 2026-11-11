@@ -1,0 +1,6 @@
+# The marketing site is plain static files; Netlify serves site/ as is, with no build step.
+# netlify/ holds the functions that count downloads and page views and serve the private
+# dashboard (spec 0052); Netlify bundles those itself and applies netlify/database/migrations.
+[build]
+  publish = "site"
+  command = ""

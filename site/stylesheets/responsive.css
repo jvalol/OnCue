@@ -1,0 +1,54 @@
+/****************** SMARTPHONE *********************/
+
+@media only screen and (max-width: 767px){
+
+	.blue-btn{ display: inline-block; }
+	.green-btn{ display: inline-block; }
+	.red-btn{ display: inline-block; }
+
+	/***** NAV ******/
+	
+	#main-nav{ overflow: hidden; }
+	#nav-holder li { float: none; margin-left: 0px; margin-bottom: 11px; }
+	#nav-holder li:last-child{ margin-top: 22px;	 }
+	#main-nav .blue-btn{ display: inline-block; }
+
+	/***** HOME PAGE *****/
+	#home{ padding-top: 120px; background-size: auto; }
+	.slide-left, .slide-right{ padding: 0 15px; }
+	#home-slider .btn{ margin-bottom: 44px; display:inline-block; float: right; padding: 15px; font-size: 16px; }
+	#home-slider { min-height: 0px; }
+	#home-slider h1 { margin-bottom: 22px;}
+
+	/****** FEATURES *******/
+	.feature h4 { display: block; }
+	.feature-row p { margin-bottom: 44px; }
+	.platform-row .green-btn { margin-bottom: 22px ;}
+	
+	/******* NEWSLETTER *******/
+	
+	#newsletter i{ display: none;}
+	.newsletter-email{ width: 100% !important; }
+	.newsletter-btn{ margin-left: 0px; width: 50%; float: right; }
+	#newsletter h3{ margin-bottom: 22px; }
+	#newsletter .inner-section { padding-top: 15px; }
+	
+	
+	/******** PRICING ***********/
+	
+	.price-table { margin-bottom: 44px; }
+	
+	
+	/******** AS SEEN IN **********/
+	
+	#as-seen .three{ margin: 0px 0px 44px 0px; }
+	
+	/******* FOOTER ***********/
+	
+	#footer{ background-image: none; }
+	#footer .three{margin-bottom: 44px;}
+	#footer .three:last-child{ text-align: left !important;}
+	#footer i{ margin-left: 0px; margin-right: 22px; }
+	.mail-link i{ margin-right: 0px !important; }
+	#footer .newsletter-btn{ width: 50% !important; }
+}

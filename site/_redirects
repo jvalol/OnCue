@@ -1,0 +1,3 @@
+# The site moved from Netlify's hostname to its own on 2026-09-22. Anything still pointing at the
+# old name (feed subscribers, review replies, bookmarks, older casks) lands on the same page here.
+https://oncue-web.netlify.app/* https://oncue.jva.lol/:splat 301!

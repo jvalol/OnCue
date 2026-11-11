@@ -1,0 +1,848 @@
+/************** GENERAL & PSEUDO CLASSES ****************/
+
+input {
+    -webkit-appearance: none;
+    border-radius: 0;
+}
+
+#main-container{
+	width: 100%;
+	overflow: hidden;
+}
+
+section{
+	padding-bottom: 44px;
+}
+
+/* The nav is fixed and 80px tall, so a page's first section has to start below it or its heading
+   hides underneath. The front page clears it with #home's own padding, which wins on specificity;
+   this is for the pages that go straight into their content. */
+section:first-of-type{
+	padding-top: 80px;
+}
+
+.inner-section{
+	padding-top: 44px;
+	padding-bottom: 44px;
+	
+}
+
+.slide-left{
+	padding-left: 60px;
+}
+
+.slide-right{
+	padding-right: 60px;
+}
+
+.even-section{
+	background-color: #eee;
+}
+
+.odd-section{
+	background-color: #fff;
+}
+
+.blue-btn{
+	border-bottom: 3px solid #4aa89f;
+	background-color: #00BCF9;
+	padding: 10px;
+	color: #fff;
+	font-family: 'Montserrat';
+	cursor: pointer;
+	position: relative;
+}
+.blue-btn:hover{
+	top: 5px;
+	border-bottom: 0px solid #4aa89f;
+}
+.green-btn{
+	border-bottom: 3px solid #20a86a;
+	background-color: #30d589;
+	padding: 20px;
+	color: #fff;
+	font-family: 'Montserrat';
+	cursor: pointer;
+	position: relative;
+}
+.green-btn:hover{
+	top: 5px;
+	border-bottom: 0px solid #4aa89f;
+}
+.red-btn{
+	border-bottom: 3px solid #a02a2c;
+	background-color: #FF422E;
+	padding: 20px;
+	color: #fff;
+	font-family: 'Montserrat';
+	cursor: pointer;
+	position: relative;
+}
+
+.section-preamble h2{
+	color: #dd4749;
+	margin-bottom: 11px;
+	font-weight: normal;
+}
+
+.section-preamble .hr{
+	border: 1px solid #ccc;
+	width: 20%;
+	margin: 0px auto;
+}
+
+.section-preamble p{
+	font-size: 18px;
+	color: #777;
+	margin: 0px auto;
+	width: 80%;
+	margin-bottom: 44px;
+}
+
+.blue-btn{
+	-webkit-transition: all .1s ease;
+	-moz-transition: all .1s ease;
+	transition: all .1s ease;
+}
+
+.btn{
+	-webkit-transition: all .1s ease;
+	-moz-transition: all .1s ease;
+	transition: all .1s ease;
+}
+
+
+
+
+
+/************* NAV STYLES *********************/
+
+#main-nav{
+	min-height: 80px;
+	max-height: 80px;
+	background-color: rgba(255,255,255,0.95);
+	box-shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
+	-moz-box-shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
+	-webkit-box-shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
+	position: fixed;
+	top: 0;
+	z-index: 20;
+	width: 100%;
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	transition: all .5s ease;
+}
+
+.open-nav{
+	max-height: 400px !important;
+}
+
+.open-nav #nav-holder ul{
+	margin: 0;
+}
+
+#mobile-toggle{
+	float: right;
+	font-size: 40px;
+	color: #888;
+	display: block;
+	cursor: pointer;
+	position: relative;
+	bottom: 75px;
+}
+
+#logo{
+	padding-top: 10px;
+}
+
+#logo h5{
+	color: #888;
+	font-family: 'Rationale', sans-serif;
+	font-size: 80px;
+	position: relative;
+	top: -5px;
+	font-weight: 300;
+}
+
+#nav-holder ul{
+	list-style: none;
+	margin: 0 0 0 -100px;
+	padding-top: 15px;
+	overflow: hidden;
+}
+
+#nav-holder li{
+	float: left;
+	list-style: none;
+	margin-left: 22px;
+}
+
+#nav-holder li a{
+	font-family: 'Montserrat';
+	color: #888;
+}
+
+#nav-holder li:first-child{
+	margin-left: 0px;
+}
+
+#main-nav .blue-btn{
+	top: -10px;
+}
+
+#main-nav .blue-btn a{
+	color: #fff;
+}
+
+#main-nav .blue-btn:hover{
+	top: -5px;
+	border-bottom: 0px solid #4aa89f;
+}
+
+/*************** HOME STYLES ******************/
+
+#home{
+	padding-top: 200px;
+/* 	background:url('../images/background.jpg'); */
+	background-size: cover;
+	background-color: #ffffff;
+	overflow: hidden;
+	margin-bottom: 44px;
+	padding-bottom: 0px !important;	
+	min-height: 500px;
+}	
+
+#home-slider{
+	overflow: hidden;
+	position: relative;
+	min-height: 700px;
+}
+
+#home-slider img{
+	position: relative;
+	top: 5px;
+}
+
+#home-slider h1{
+	color: rgba(11,11,11,0.7);
+	font-size: 48px;
+}
+
+#home-slider .hr{
+	border: 1px solid rgba(11,11,11,0.7);
+	margin-top: 44px;
+	margin-bottom: 44px;
+	width: 60%;
+	float: right;
+}
+
+#home-slider p{
+	font-size: 18px;
+	color: rgba(11,11,11,0.7);
+	margin-bottom: 44px;
+}
+
+#home-slider .btn{
+	background-color: #dd4749;
+	padding: 20px;
+	color: rgba(11,11,11,0.7);
+	font-size: 18px;
+	border-bottom: 4px solid #a02a2c;
+	font-family:'Montserrat';
+	cursor: pointer;
+	position: relative;
+	margin-bottom: 88px;
+}
+
+#home-slider .btn:hover{
+	top: 5px;
+	border-bottom: 0px solid #a02a2c;
+	
+}
+
+#home-slider iframe{
+	width: 100% !important;
+	height: 290px;
+	margin-top: 44px;
+	border: none;
+}
+
+/********************* FEATURES SECTION *********************/
+
+/* Foundation's reset zeroes every heading margin and nothing here gave h2 or h3 any back, so the
+   section title sat at 0px from the first feature title, and each title at 0px from its text.
+   The template's rhythm was written for h4 (below) and the site moved to h3 without it. */
+.inner-section h2{
+	margin-bottom: 18px;
+}
+
+.feature h3{
+	margin-top: 22px;
+	margin-bottom: 8px;
+}
+
+.feature h4{
+	margin-top: 22px;
+	margin-bottom: 22px;
+	border-bottom: 2px solid;
+	display: inline-block;
+	font-size: 16px;
+	color: #444;
+	padding-bottom: 2px;
+}
+
+.platform-row h2{
+	color: #dd4749;
+	font-weight: normal;
+	margin-bottom: 11px;
+}
+
+.mid-row{
+	background-color: #f5f5f5;
+}
+
+.platform-row .hr{
+	width: 40%;
+	border: 1px solid #ccc;
+	margin-bottom: 0px;
+	display: inline-block;
+}
+
+.platform-row p{
+	margin-top: 22px;
+	margin-bottom: 44px;
+}
+
+.platform-row img{
+	max-height: 400px;
+	text-align: center;
+}
+
+.platform-row .blue-btn{
+	display: inline-block;
+	font-size: 18px;
+	padding: 20px;
+	margin-left: 18px;
+}
+
+.platform-row .blue-btn:hover{
+	top: 5px;
+	border-bottom: 0px solid #4aa89f;
+	
+}
+
+.platform-row .green-btn{
+	display: inline-block;
+	font-size: 18px;
+	padding: 20px;
+}
+
+.platform-row .green-btn:hover{
+	top: 5px;
+	border-bottom: 0px solid #4aa89f;
+	
+}
+.feature-row .question-holder{
+/* 	margin-bottom: 22px; */
+/* 	width: 100%; */
+}	
+
+.feature-row .question{
+	background-color: rgba(0,0,0,0);
+	padding: 0px;
+	cursor: pointer;
+	width: 100%;
+}
+.feature-row .question i{
+	display: inline-block;
+	font-size: 55px;
+	height: 5px;	
+	padding: 0px;
+	margin: 0px;
+}
+.feature-row .answer{
+	border-bottom: 3px solid #ccc;
+	background-color: #eee;
+	max-height: 1px;
+	overflow: hidden;
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	transition: all .5s ease;
+}
+
+.feature-row .question:hover span{
+	bottom: 3px;
+}
+
+.feature-row .question span{
+	font-size: 18px;
+	-webkit-transition: all .1s ease;
+	-moz-transition: all .1s ease;
+	transition: all .1s ease;
+	position: relative;
+}
+
+
+
+.feature-row .show-question{
+	font-size: 40px !important;
+	margin-left: 11px;
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	transition: all .5s ease;
+	float: right;
+	margin-top: 10px;
+	position: relative;
+}
+
+.feature-row .show-rotate{
+	-moz-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+	-webkit-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    -o-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    -ms-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    top: -5px;
+}
+
+
+
+.feature-row .answer p{
+	padding: 15px;
+}
+
+.feature-row .answer-open{
+	max-height: 400px;
+}
+
+/*************** NEWSLETTER SECTION **************/
+
+#newsletter{
+/* 	background:url('http://placehold.it/1280x800'); */
+	background-size: cover;
+	background-color: #235071;
+	padding-top: 49px;
+}
+
+#newsletter .inner-section{
+	padding-bottom: 10px;
+}
+
+#newsletter i{
+	float: left;
+	display: block;
+	font-size: 170px;
+	height: 100px;
+	width: 100px;
+	line-height: 0.35;
+	color: rgba(255,255,255,0.7);
+	float: left;
+}
+
+#newsletter h3{
+	color: rgba(255,255,255,0.7);
+	font-weight:normal;
+}
+
+.newsletter-email{
+	width: 60% !important; 
+	top: 3px;
+	position: relative;
+	height: 63px !important;
+}
+
+.newsletter-btn{
+	background-color: #dd4749;
+	border-style: none;
+	border-bottom: 3px solid #222;
+	padding: 20px;
+	color: #fff;
+	font-family: 'Montserrat';
+	border-bottom: 3px solid #a02a2c;
+	cursor: pointer;
+	position: relative;
+	width: 35%;
+	margin-left: 5%;
+	font-size: 18px;
+}
+
+.newsletter-btn:hover{
+	top: 3px;
+	border-bottom: 0px solid #a02a2c;
+}
+
+#newsletter .green-btn{
+	border-bottom: 3px solid #20a86a !important;
+	background-color: #30d589 !important;
+	cursor: default !important;
+}	
+
+#newsletter .form-sent{
+	top: 3px;
+	height: 64px;
+	text-align: center;
+}
+
+/**************** PRICING SECTION ****************/
+
+.price-table h4{
+	font-family: 'Montserrat';
+}
+
+.price-heading{
+	padding: 25px;
+	background-color: #dd4749;
+}
+.price-amount{
+	padding: 35px;
+	background-color: #e2897f;
+}
+
+.price-details{
+	list-style: none;
+	border-left: 1px solid #aaa;
+	border-right: 1px solid #aaa;
+
+}
+
+.price-details li{
+	font-size: 16px;
+	padding: 15px;
+}
+
+.price-details li:nth-child(odd){
+	background-color: #fff;
+}
+
+.price-details li:nth-child(even){
+	background-color: #eee;
+}
+
+.price-purchase{
+	padding: 25px;
+	border-left: 1px solid #aaa;
+	border-right: 1px solid #aaa;
+	border-bottom: 1px solid #aaa;
+	min-height: 112px;
+	background-color: #fff;
+}
+
+.price-purchase .btn{
+	display: inline-block;
+	font-size: 18px;
+	color: #fff;
+}
+
+.price-purchase .btn:hover{
+	top: 3px;
+	border-bottom: 0px solid #fff;
+}
+
+/******************** FAQ Section ********************/
+
+.question-holder{
+	margin-bottom: 22px;
+	width: 100%;
+}	
+
+.question{
+	background-color: #2b516f;
+	padding: 25px;
+	cursor: pointer;
+	width: 100%;
+}
+
+.question:hover span{
+	bottom: 3px;
+}
+
+.question span{
+	font-size: 18px;
+	-webkit-transition: all .1s ease;
+	-moz-transition: all .1s ease;
+	transition: all .1s ease;
+	position: relative;
+}
+
+.question i{
+	display: inline-block;
+	font-size: 55px;
+	height: 5px;
+	
+}
+
+.show-question{
+	font-size: 40px !important;
+	margin-left: 11px;
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	transition: all .5s ease;
+	float: right;
+	margin-top: 10px;
+	position: relative;
+}
+
+.show-rotate{
+	-moz-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+	-webkit-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    -o-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    -ms-transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    transform: scale(1) rotate(180deg) translateX(0px) translateY(0px) skewX(0deg) skewY(0deg);
+    top: -5px;
+}
+
+.answer{
+	border-bottom: 3px solid #ccc;
+	background-color: #eee;
+	max-height: 1px;
+	overflow: hidden;
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	transition: all .5s ease;
+}
+
+.answer p{
+	padding: 15px;
+}
+
+.answer-open{
+	max-height: 400px;
+}
+
+/************************ AS SEEN ON SECTION *******************/
+
+.critic-review{
+	margin-top: 22px;
+}
+
+.critic-review i{
+	color: #bbb;
+	font-size: 48px;
+}
+
+.critic-review h5{
+	margin-top: 11px;
+	color: #777;
+	font-family:'Montserrat';
+	font-weight: normal;
+}
+
+/*********************** FOOTER SECTION *******************/
+
+#footer{
+/* 	background:url('../images/gradient1280x800-footer.png'); */
+	background-size: cover;
+	background-color: #222;
+	padding-top: 44px;
+}
+
+#1280 h4, #footer h5, #footer h6{
+	color: #fff;
+	font-family: 'Montserrat';
+}
+
+#footer h3{
+	font-family: 'Euphoria Script';
+	color: #fff;
+	opacity: 0.2;
+	font-weight: normal;
+	font-size: 30px;
+	margin-bottom: 0px;
+	margin-top: 66px;
+}
+
+#footer li{
+	list-style: none;
+	font-family: 'Montserrat';
+	font-size: 17px;
+	margin-bottom: 3px;
+}
+
+#footer li a{
+	color: #fff;
+}
+
+.footer-title{
+	margin-bottom: 44px;
+	color: #fff;
+}
+
+#footer p{
+	color: #fff;
+}
+
+#footer i{
+	font-size: 40px;
+	margin-left: 22px;
+	color: #fff;
+	opacity: 0.5;
+	-webkit-transition: all .3s ease;
+	-moz-transition: all .3s ease;
+	transition: all .3s ease;
+}
+
+#footer i:hover{
+	opacity: 1;
+}
+
+.footer-social{
+	margin-top: 11px;
+}
+
+#footer .newsletter-email{
+	background-color: #fff;
+	border: 1px solid #fff;
+	height: 54px !important;
+	color: #666;
+	width: 100% !important;
+}	
+
+#footer .newsletter-btn{
+	padding: 15px;
+	font-size: 16px;
+	right: 0px;
+	width: 130px !important;
+}
+
+#footer .green-btn{
+	border-bottom: 3px solid #20a86a !important;
+	background-color: #30d589 !important;
+	cursor: default !important;
+	text-align: center;
+}	
+
+
+.mail-link a{
+	color: #fff;
+}
+
+.mail-link{
+	margin-top: 22px;
+	font-size: 16px;
+	margin-bottom: 44px;
+}
+
+.mail-link i{
+	display: inline-block;
+	padding-bottom: 6px;
+	padding-right: 10px;
+	opacity: 1 !important;
+}
+
+#feature-list i{
+	width:130px;
+	height:130px;
+/* 	display: block; */
+	font-size: 170px;
+/* 	line-height: 0.35; */
+	color: rgba(55,55,55,0.7);
+	position:relative;
+	text-align: center;
+	left: 18px;
+	top: 100px;
+}
+#newsletter i{
+	float: left;
+	display: block;
+	font-size: 170px;
+	height: 100px;
+	width: 100px;
+	line-height: 0.35;
+	color: rgba(255,255,255,0.7);
+	float: left;
+}
+
+/* Anchors sit above their section so the fixed nav doesn't cover the heading. */
+#features-scroll, #screenshots-scroll {
+	display: block;
+	position: relative;
+	top: -90px;
+	visibility: hidden;
+}
+
+/******************** Release meta ********************/
+
+.release-meta{
+	margin-top: 18px;
+	font-size: 13px;
+	color: #888;
+}
+
+/******************** Homebrew install ********************/
+
+.install-alt{
+	margin-top: 26px;
+	margin-bottom: 10px;
+	font-size: 14px;
+	color: #666;
+}
+
+.install-command{
+	/* Shrink to fit and stay centred, but always on its own line. As inline-block these flowed
+	   inline, so the codesign command and the output under it landed side by side and
+	   baseline-aligned. */
+	display: block;
+	width: fit-content;
+	max-width: calc(100% - 30px);
+	margin: 0 auto;
+	padding: 12px 18px;
+	background: #f4f4f4;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	overflow-x: auto;
+	text-align: left;
+}
+
+.install-note{
+	margin-top: 14px;
+	font-size: 13px;
+	color: #888;
+}
+
+/* Foundation renders a bare <code> bold on yellow, which is for inline emphasis rather than a
+   command someone is meant to select and copy. */
+.install-command code,
+.install-note code{
+	background: none;
+	font-weight: normal;
+	font-family: Menlo, Monaco, Consolas, monospace;
+	font-size: 13px;
+	color: #333;
+	white-space: nowrap;
+}
+
+/******************** Entitlement check ********************/
+
+.verify-note{
+	margin-top: 24px;
+	margin-bottom: 0;
+	font-size: 13px;
+	color: #888;
+}
+
+/* Dashed and dimmer than .install-command, so what comes back doesn't read as something to type. */
+.install-output{
+	display: block;
+	width: fit-content;
+	max-width: calc(100% - 30px);
+	margin: 12px auto 0;
+	padding: 12px 18px;
+	border: 1px dashed #dcdcdc;
+	border-radius: 4px;
+	overflow-x: auto;
+	text-align: left;
+}
+
+.install-output code{
+	background: none;
+	font-weight: normal;
+	font-family: Menlo, Monaco, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.7;
+	color: #777;
+	white-space: pre;
+}
+
+/* An anchored changelog heading (the app links to #v4-20) lands below the fixed nav, not under it. */
+h3[id] {
+  scroll-margin-top: 90px;
+}

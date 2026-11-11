@@ -1,0 +1,1432 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ isn't available, so recordings are going here for now." : {
+      "comment" : "Settings, under the recordings folder; the argument is the chosen folder",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ist nicht verfügbar, deshalb landen Aufnahmen vorerst hier."
+          }
+        }
+      }
+    },
+    "%@ on %@" : {
+      "comment" : "When a schedule window ends; the arguments are a time and a weekday",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ um %1$@"
+          }
+        }
+      }
+    },
+    "%@ tomorrow" : {
+      "comment" : "When a schedule window ends; the argument is a time",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "morgen %@"
+          }
+        }
+      }
+    },
+    "%lld percent" : {
+      "comment" : "Accessibility value of a popover meter; the argument is 0 to 100",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Prozent"
+          }
+        }
+      }
+    },
+    "%lld recordings in a row weren't saved: OnCue isn't allowed to write where recordings go" : {
+      "comment" : "Popover notice; has a singular form in the catalog",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Eine Aufnahme wurde nicht gespeichert: OnCue darf am Speicherort der Aufnahmen nicht schreiben"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Aufnahmen in Folge wurden nicht gespeichert: OnCue darf am Speicherort der Aufnahmen nicht schreiben"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "A recording wasn't saved: OnCue isn't allowed to write where recordings go"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recordings in a row weren't saved: OnCue isn't allowed to write where recordings go"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld recordings in a row weren't saved: the file couldn't be written" : {
+      "comment" : "Popover notice; has a singular form in the catalog",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Eine Aufnahme wurde nicht gespeichert: die Datei konnte nicht geschrieben werden"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Aufnahmen in Folge wurden nicht gespeichert: die Datei konnte nicht geschrieben werden"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "A recording wasn't saved: the file couldn't be written"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recordings in a row weren't saved: the file couldn't be written"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld recordings in a row weren't saved: the folder recordings go to isn't there" : {
+      "comment" : "Popover notice; has a singular form in the catalog",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Eine Aufnahme wurde nicht gespeichert: der Ordner für die Aufnahmen ist nicht da"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Aufnahmen in Folge wurden nicht gespeichert: der Ordner für die Aufnahmen ist nicht da"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "A recording wasn't saved: the folder recordings go to isn't there"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recordings in a row weren't saved: the folder recordings go to isn't there"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld recordings in a row weren't saved: there's no room left where recordings go" : {
+      "comment" : "Popover notice; has a singular form in the catalog",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Eine Aufnahme wurde nicht gespeichert: am Speicherort der Aufnahmen ist kein Platz mehr"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Aufnahmen in Folge wurden nicht gespeichert: am Speicherort der Aufnahmen ist kein Platz mehr"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "A recording wasn't saved: there's no room left where recordings go"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recordings in a row weren't saved: there's no room left where recordings go"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld recordings in the last day, most barely longer than the %llds minimum." : {
+      "comment" : "Popover; never fewer than three recordings, so no singular; the second argument is seconds",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Aufnahmen in den letzten 24 Stunden, die meisten kaum länger als das Minimum von %lld s."
+          }
+        }
+      }
+    },
+    "%lld recordings in the last day, typically %llds. OnCue can't make one shorter than %llds." : {
+      "comment" : "Popover; never fewer than three recordings, so no singular; the other arguments are seconds",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Aufnahmen in den letzten 24 Stunden, typischerweise %lld s. Kürzer als %lld s kann OnCue keine machen."
+          }
+        }
+      }
+    },
+    "About" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über OnCue"
+          }
+        }
+      }
+    },
+    "Add a window" : {
+      "comment" : "Settings button adding a schedule row",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitfenster hinzufügen"
+          }
+        }
+      }
+    },
+    "Arm" : {
+      "comment" : "Popover button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scharf schalten"
+          }
+        }
+      }
+    },
+    "Arm OnCue" : {
+      "comment" : "Shortcuts action",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue scharf schalten"
+          }
+        }
+      }
+    },
+    "Armed" : {
+      "comment" : "Armed state\nFocus Filter summary",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scharf"
+          }
+        }
+      }
+    },
+    "Armed by Focus" : {
+      "comment" : "Armed state while a Focus Filter armed it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scharf durch Fokus"
+          }
+        }
+      }
+    },
+    "Armed for %@, nothing recorded" : {
+      "comment" : "Popover line under the state, after a disarm",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ scharf, nichts aufgenommen"
+          }
+        }
+      }
+    },
+    "Armed for %@: %lld recordings between %@ and %@" : {
+      "comment" : "Popover line under the state, after a disarm",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ scharf: %2$lld Aufnahmen zwischen %3$@ und %4$@"
+          }
+        }
+      }
+    },
+    "Armed for %@: one recording at %@" : {
+      "comment" : "Popover line under the state, after a disarm",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ scharf: eine Aufnahme um %2$@"
+          }
+        }
+      }
+    },
+    "Armed on schedule until %@" : {
+      "comment" : "Armed state; the argument is when the window ends",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach Zeitplan scharf bis %@"
+          }
+        }
+      }
+    },
+    "Armed while this Focus is on" : {
+      "comment" : "Focus Filter switch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scharf, solange dieser Fokus aktiv ist"
+          }
+        }
+      }
+    },
+    "Arming… %lld" : {
+      "comment" : "Armed state; the argument is the countdown in seconds",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scharfschaltung … %lld"
+          }
+        }
+      }
+    },
+    "Arms OnCue after a short countdown, so it records when it sees motion or hears sound." : {
+      "comment" : "Shortcuts action description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schaltet OnCue nach einem kurzen Countdown scharf, sodass es aufnimmt, wenn es Bewegung sieht oder Ton hört."
+          }
+        }
+      }
+    },
+    "Choose" : {
+      "comment" : "Folder panel button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auswählen"
+          }
+        }
+      }
+    },
+    "Choose where OnCue saves its recordings." : {
+      "comment" : "Folder panel message",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wählen Sie, wo OnCue seine Aufnahmen speichert."
+          }
+        }
+      }
+    },
+    "Clear zones" : {
+      "comment" : "Preview window button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zonen löschen"
+          }
+        }
+      }
+    },
+    "Closing the lid will stop OnCue until it's opened again" : {
+      "comment" : "Popover notice",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Zuklappen hält OnCue an, bis der Mac wieder aufgeklappt wird"
+          }
+        }
+      }
+    },
+    "Disarm" : {
+      "comment" : "Popover button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unscharf schalten"
+          }
+        }
+      }
+    },
+    "Disarm OnCue" : {
+      "comment" : "Shortcuts action",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue unscharf schalten"
+          }
+        }
+      }
+    },
+    "Drag to draw a zone. With none drawn, the whole frame is used." : {
+      "comment" : "Preview window hint",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziehen Sie, um eine Zone zu zeichnen. Ohne Zone zählt das ganze Bild."
+          }
+        }
+      }
+    },
+    "End time" : {
+      "comment" : "Accessibility label, schedule row",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endzeit"
+          }
+        }
+      }
+    },
+    "Enter a number from %@ to %@." : {
+      "comment" : "Alert title; the arguments are the allowed minimum and maximum",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geben Sie eine Zahl von %@ bis %@ ein."
+          }
+        }
+      }
+    },
+    "Finishing the recording…" : {
+      "comment" : "Alert title when quitting mid-recording",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahme wird abgeschlossen …"
+          }
+        }
+      }
+    },
+    "Is it armed" : {
+      "comment" : "Shortcuts short title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ist es scharf"
+          }
+        }
+      }
+    },
+    "Is OnCue Armed" : {
+      "comment" : "Shortcuts action",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ist OnCue scharf"
+          }
+        }
+      }
+    },
+    "It will start watching in a few seconds. Open OnCue to stop it." : {
+      "comment" : "Notification body when arming at launch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In wenigen Sekunden beginnt die Überwachung. Öffnen Sie OnCue, um sie zu stoppen."
+          }
+        }
+      }
+    },
+    "Keep Recording" : {
+      "comment" : "Alert button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter aufnehmen"
+          }
+        }
+      }
+    },
+    "Keep the popover open" : {
+      "comment" : "Accessibility label, popover pin button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenster offen halten"
+          }
+        }
+      }
+    },
+    "Keeps OnCue armed while this Focus is on." : {
+      "comment" : "Focus Filter description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hält OnCue scharf, solange dieser Fokus aktiv ist."
+          }
+        }
+      }
+    },
+    "macOS is lighting the screen to brighten what the camera sees. OnCue can't turn that off." : {
+      "comment" : "Popover notice",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS hellt den Bildschirm auf, damit die Kamera mehr sieht. OnCue kann das nicht abschalten."
+          }
+        }
+      }
+    },
+    "macOS needs your approval before OnCue can open at login." : {
+      "comment" : "Alert title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS braucht Ihre Zustimmung, bevor OnCue bei der Anmeldung geöffnet werden kann."
+          }
+        }
+      }
+    },
+    "Make a Time-lapse" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitraffer erstellen"
+          }
+        }
+      }
+    },
+    "Make a Time-lapse (%@)" : {
+      "comment" : "Popover menu, with the stretch's times",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitraffer erstellen (%@)"
+          }
+        }
+      }
+    },
+    "Menu" : {
+      "comment" : "Accessibility label, popover gear button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menü"
+          }
+        }
+      }
+    },
+    "Motion level" : {
+      "comment" : "Accessibility label, popover meter",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewegungspegel"
+          }
+        }
+      }
+    },
+    "Motion threshold" : {
+      "comment" : "Accessibility label, popover slider",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewegungs-Schwelle"
+          }
+        }
+      }
+    },
+    "Motion trigger" : {
+      "comment" : "Accessibility label, popover checkbox",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewegungs-Auslöser"
+          }
+        }
+      }
+    },
+    "next day" : {
+      "comment" : "Schedule row, after an end time earlier than the start",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folgetag"
+          }
+        }
+      }
+    },
+    "No camera" : {
+      "comment" : "Camera menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Kamera"
+          }
+        }
+      }
+    },
+    "No microphone" : {
+      "comment" : "Microphone menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Mikrofon"
+          }
+        }
+      }
+    },
+    "No second camera" : {
+      "comment" : "Second camera menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine zweite Kamera"
+          }
+        }
+      }
+    },
+    "Not armed" : {
+      "comment" : "Focus Filter summary",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht scharf"
+          }
+        }
+      }
+    },
+    "Not Now" : {
+      "comment" : "Alert button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Später"
+          }
+        }
+      }
+    },
+    "Nothing in that stretch could be read, so no time-lapse was made" : {
+      "comment" : "Popover line under the state, after Make a Time-lapse found nothing to use",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus diesem Zeitraum ließ sich nichts lesen, daher wurde kein Zeitraffer erstellt"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "comment" : "Alert button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "OnCue - %@" : {
+      "comment" : "Menu bar icon accessibility label; the argument is the armed state",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue - %@"
+          }
+        }
+      }
+    },
+    "OnCue - a recording failed" : {
+      "comment" : "Menu bar icon accessibility label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue - eine Aufnahme ist fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "OnCue can't arm: nothing can trigger a recording. Check the camera and microphone in Preferences." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue kann nicht scharf schalten: nichts kann eine Aufnahme auslösen. Prüfen Sie Kamera und Mikrofon in den Einstellungen."
+          }
+        }
+      }
+    },
+    "OnCue can't record a test right now." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue kann gerade keinen Test aufnehmen."
+          }
+        }
+      }
+    },
+    "OnCue can't write to %@" : {
+      "comment" : "Alert title; the argument is a folder path",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue kann nicht in %@ schreiben"
+          }
+        }
+      }
+    },
+    "OnCue couldn't change whether it opens at login." : {
+      "comment" : "Alert title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue konnte nicht ändern, ob es bei der Anmeldung geöffnet wird."
+          }
+        }
+      }
+    },
+    "OnCue is already armed." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue ist bereits scharf."
+          }
+        }
+      }
+    },
+    "OnCue is armed" : {
+      "comment" : "Why the Mac is kept awake, as Activity Monitor shows it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue ist scharf geschaltet"
+          }
+        }
+      }
+    },
+    "OnCue is arming itself" : {
+      "comment" : "Notification title when arming at launch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue schaltet sich scharf"
+          }
+        }
+      }
+    },
+    "OnCue is arming." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wird scharf geschaltet."
+          }
+        }
+      }
+    },
+    "OnCue is disarmed." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue ist unscharf."
+          }
+        }
+      }
+    },
+    "OnCue is recording a test." : {
+      "comment" : "Shortcuts result",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue nimmt einen Test auf."
+          }
+        }
+      }
+    },
+    "OnCue is starting with default settings.\nCheck the recordings folder and arm at login in Settings." : {
+      "comment" : "Popover notice, two lines",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue startet mit Standardeinstellungen.\nPrüfen Sie in den Einstellungen den Aufnahmeordner und das Scharfschalten bei der Anmeldung."
+          }
+        }
+      }
+    },
+    "OnCue is waiting for its schedule" : {
+      "comment" : "Why the Mac is kept awake between schedule windows, as Activity Monitor shows it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wartet auf seinen Zeitplan"
+          }
+        }
+      }
+    },
+    "OnCue is writing the last of what it recorded, then it will quit." : {
+      "comment" : "Alert text when quitting mid-recording",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue schreibt noch den Rest der Aufnahme und beendet sich dann."
+          }
+        }
+      }
+    },
+    "OnCue isn't allowed to write here, so recordings will fail. Choose somewhere else." : {
+      "comment" : "Settings, under the recordings folder",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue darf hier nicht schreiben, Aufnahmen werden fehlschlagen. Wählen Sie einen anderen Ort."
+          }
+        }
+      }
+    },
+    "OnCue isn't running yet." : {
+      "comment" : "Intent error",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue läuft noch nicht."
+          }
+        }
+      }
+    },
+    "OnCue isn't watching for motion right now." : {
+      "comment" : "Popover notice",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue achtet gerade nicht auf Bewegung."
+          }
+        }
+      }
+    },
+    "OnCue isn't watching for motion right now. Sound still is." : {
+      "comment" : "Popover notice",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue achtet gerade nicht auf Bewegung. Auf Ton weiterhin."
+          }
+        }
+      }
+    },
+    "OnCue quit unexpectedly" : {
+      "comment" : "Notification title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wurde unerwartet beendet"
+          }
+        }
+      }
+    },
+    "OnCue quit unexpectedly at %@ and wasn't watching until %@" : {
+      "comment" : "Popover notice; the arguments are a time or a date and time",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wurde um %@ unerwartet beendet und hat bis %@ nicht überwacht"
+          }
+        }
+      }
+    },
+    "OnCue quit unexpectedly at %@ and wasn't watching until %@, so nothing was recorded in between." : {
+      "comment" : "Notification body; the arguments are a time or a date and time",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wurde um %@ unerwartet beendet und hat bis %@ nicht überwacht, dazwischen wurde also nichts aufgenommen."
+          }
+        }
+      }
+    },
+    "OnCue was updated from an older version. See what changed" : {
+      "comment" : "Popover notice, a link to the changelog",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wurde von einer älteren Version aktualisiert. Sehen Sie, was sich geändert hat"
+          }
+        }
+      }
+    },
+    "OnCue was updated to %@. See what changed" : {
+      "comment" : "Popover notice, a link to the changelog; the argument is a version",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue wurde auf %@ aktualisiert. Sehen Sie, was sich geändert hat"
+          }
+        }
+      }
+    },
+    "OnCue wasn't watching" : {
+      "comment" : "Notification title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue hat nicht überwacht"
+          }
+        }
+      }
+    },
+    "OnCue wasn't watching from %@ to %@" : {
+      "comment" : "Popover notice; the arguments are times",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue hat von %@ bis %@ nicht überwacht"
+          }
+        }
+      }
+    },
+    "OnCue wasn't watching from %@ to %@, so nothing was recorded." : {
+      "comment" : "Notification body; the arguments are times",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OnCue hat von %@ bis %@ nicht überwacht, es wurde also nichts aufgenommen."
+          }
+        }
+      }
+    },
+    "OnCue won't be open after a restart, so it can't arm itself. Turn on Open OnCue at Login in settings if you want that." : {
+      "comment" : "Popover notice; the schedule or arm-at-login is on and Open at Login is off",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach einem Neustart ist OnCue nicht geöffnet, also kann es sich nicht selbst scharf schalten. Schalten Sie „OnCue bei der Anmeldung öffnen“ in den Einstellungen ein, wenn Sie das möchten."
+          }
+        }
+      }
+    },
+    "Open Login Items" : {
+      "comment" : "Alert button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmeldeobjekte öffnen"
+          }
+        }
+      }
+    },
+    "Preferences…" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen …"
+          }
+        }
+      }
+    },
+    "Quit" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beenden"
+          }
+        }
+      }
+    },
+    "Quit Now" : {
+      "comment" : "Alert button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt beenden"
+          }
+        }
+      }
+    },
+    "Record a Test" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testaufnahme"
+          }
+        }
+      }
+    },
+    "Recording" : {
+      "comment" : "Armed state",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahme läuft"
+          }
+        }
+      }
+    },
+    "Recordings are saved here." : {
+      "comment" : "Settings, under the recordings folder",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahmen werden hier gespeichert."
+          }
+        }
+      }
+    },
+    "Recordings are still going where they were. Some folders don't allow it, including Time Machine disks and anything read-only." : {
+      "comment" : "Alert text when a chosen folder can't be written",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahmen landen weiterhin dort, wo sie bisher waren. Manche Ordner lassen es nicht zu, darunter Time-Machine-Volumes und alles Schreibgeschützte."
+          }
+        }
+      }
+    },
+    "Recordings folder" : {
+      "comment" : "Accessibility label, Settings path field",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordner für Aufnahmen"
+          }
+        }
+      }
+    },
+    "Records a test on every camera, the way a trigger would, and shows the file." : {
+      "comment" : "Shortcuts action description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimmt auf jeder Kamera einen Test auf, wie ein Auslöser es täte, und zeigt die Datei."
+          }
+        }
+      }
+    },
+    "Remove this window" : {
+      "comment" : "Accessibility label, schedule row minus button",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Zeitfenster entfernen"
+          }
+        }
+      }
+    },
+    "Second camera level" : {
+      "comment" : "Accessibility label, popover meter",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegel der zweiten Kamera"
+          }
+        }
+      }
+    },
+    "Second camera threshold" : {
+      "comment" : "Accessibility label, popover slider",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schwelle der zweiten Kamera"
+          }
+        }
+      }
+    },
+    "Show Recordings" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahmen anzeigen"
+          }
+        }
+      }
+    },
+    "Show What Happened" : {
+      "comment" : "Popover menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigen, was passiert ist"
+          }
+        }
+      }
+    },
+    "Show What Happened (%@)" : {
+      "comment" : "Popover menu, with the stretch's times",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigen, was passiert ist (%@)"
+          }
+        }
+      }
+    },
+    "Sound level" : {
+      "comment" : "Accessibility label, popover meter",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonpegel"
+          }
+        }
+      }
+    },
+    "Sound threshold" : {
+      "comment" : "Accessibility label, popover slider",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton-Schwelle"
+          }
+        }
+      }
+    },
+    "Sound trigger" : {
+      "comment" : "Accessibility label, popover checkbox",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton-Auslöser"
+          }
+        }
+      }
+    },
+    "Start time" : {
+      "comment" : "Accessibility label, schedule row",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Startzeit"
+          }
+        }
+      }
+    },
+    "Stops OnCue watching, whatever armed it." : {
+      "comment" : "Shortcuts action description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beendet die Überwachung, egal was OnCue scharf geschaltet hat."
+          }
+        }
+      }
+    },
+    "System default" : {
+      "comment" : "Microphone menu",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systemstandard"
+          }
+        }
+      }
+    },
+    "The %lld oldest recordings were deleted to stay under your limit" : {
+      "comment" : "Popover notice; has a singular form in the catalog",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Die älteste Aufnahme wurde gelöscht, um unter Ihrem Limit zu bleiben"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Die %lld ältesten Aufnahmen wurden gelöscht, um unter Ihrem Limit zu bleiben"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The oldest recording was deleted to stay under your limit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The %lld oldest recordings were deleted to stay under your limit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The schedule only arms OnCue while it's open, and with Open OnCue at Login off nothing opens it after a restart. Turn it on above, or open OnCue yourself after each restart." : {
+      "comment" : "Settings warning under the schedule",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Zeitplan schaltet OnCue nur scharf, solange es geöffnet ist, und wenn „OnCue bei der Anmeldung öffnen“ aus ist, öffnet es nach einem Neustart niemand. Schalten Sie es oben ein, oder öffnen Sie OnCue nach jedem Neustart selbst."
+          }
+        }
+      }
+    },
+    "The schedule only runs while OnCue is open, so turn on Open OnCue at Login. While the schedule is on, OnCue keeps the Mac awake the whole time, on days without a window too." : {
+      "comment" : "Settings note under the schedule",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Zeitplan läuft nur, solange OnCue geöffnet ist. Schalten Sie deshalb „OnCue bei der Anmeldung öffnen“ ein. Solange der Zeitplan eingeschaltet ist, hält OnCue den Mac die ganze Zeit wach, auch an Tagen ohne Zeitfenster."
+          }
+        }
+      }
+    },
+    "to" : {
+      "comment" : "Schedule row, between the start and end times",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bis"
+          }
+        }
+      }
+    },
+    "Turn on OnCue in System Settings, under General > Login Items." : {
+      "comment" : "Alert text",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalten Sie OnCue in den Systemeinstellungen unter „Allgemein“ > „Anmeldeobjekte“ ein."
+          }
+        }
+      }
+    },
+    "Unarmed" : {
+      "comment" : "Armed state",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unscharf"
+          }
+        }
+      }
+    },
+    "Unarmed until %@" : {
+      "comment" : "Armed state between schedule windows; the argument is when the next window starts",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unscharf bis %@"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "comment" : "About window; the argument is the version number",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        }
+      }
+    },
+    "Watch on a schedule" : {
+      "comment" : "Settings checkbox",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach Zeitplan überwachen"
+          }
+        }
+      }
+    },
+    "Whether OnCue is watching right now, for an If, and what its state is." : {
+      "comment" : "Shortcuts action description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ob OnCue gerade überwacht, für ein „Wenn“, und in welchem Zustand es ist."
+          }
+        }
+      }
+    },
+    "While the schedule is on, OnCue keeps the Mac awake the whole time, including days without a window." : {
+      "comment" : "Settings note under the schedule, Open at Login already on",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solange der Zeitplan eingeschaltet ist, hält OnCue den Mac die ganze Zeit wach, auch an Tagen ohne Zeitfenster."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

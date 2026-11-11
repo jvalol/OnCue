@@ -1,0 +1,95 @@
+#!/bin/zsh
+# Soaks a running OnCue: samples it into a log, or drives it through arm/disarm cycles.
+#
+#   scripts/soak [log]              sample every five minutes into the log
+#                                   (default ~/Movies/OnCue/soak.log)
+#   SOAK_INTERVAL=60 scripts/soak   sample every minute instead
+#   scripts/soak --cycles N [log]   disarm, wait a minute, arm, wait two, N times, through the
+#                                   popover's own buttons; each action and the state read back
+#                                   go to the log (default ~/Movies/OnCue/soak-actions.log)
+#
+# A sample line: local time, pid, elapsed time, resident memory in MB, recent CPU percent, thread
+# count, open file descriptors, how many recordings the folder holds, the folder's size in MB,
+# the newest recording's age in minutes, and free space on the volume in GB. A line of dashes
+# means no OnCue process was found at that sample. Start it after launching the app, leave it in
+# the background with nohup, and read the log with column -t when the run is over.
+#
+# The point is drift. Memory that climbs by the hour, a thread or descriptor count that only
+# goes up, or a newest-recording age that stops resetting while the room is busy, each says
+# something no unit test can. The cycles mode asks the same of arm and disarm: run the sampler
+# at a minute alongside it and compare the first cycles against the last.
+#
+# Cycles drive the status item and popover with System Events, since `shortcuts run` only runs
+# shortcuts saved in the library, not the actions the app registers. The arm reads back as
+# "Arming…" because the state is read a second after the click, during the countdown; the
+# sampler's thread count (18 or more armed, under 10 off) is the armed check. Launch the app
+# with the schedule off for that process, or a window can take the arm or end it:
+#   open -n /Applications/OnCue.app --args -scheduledArmingEnabled NO
+set -u
+folder=$HOME/Movies/OnCue
+
+press() {
+  osascript <<APPLESCRIPT 2>&1
+tell application "System Events"
+  tell process "OnCue"
+    set mi to menu bar item 1 of menu bar 2
+    repeat with attempt from 1 to 2
+      if (count of pop overs of mi) > 0 then exit repeat
+      click mi
+      repeat 10 times
+        delay 0.5
+        if (count of pop overs of mi) > 0 then exit repeat
+      end repeat
+    end repeat
+    click (first button of pop over 1 of mi whose name is "$1")
+    delay 1
+    set s to (description of mi)
+    if (count of pop overs of mi) > 0 then click mi
+    return s
+  end tell
+end tell
+APPLESCRIPT
+}
+
+if [[ ${1:-} == --cycles ]]; then
+  cycles=${2:?how many cycles}
+  log=${3:-$folder/soak-actions.log}
+  for i in {1..$cycles}; do
+    print "$(date '+%Y-%m-%d %H:%M:%S')\tcycle $i\tDisarm\t$(press Disarm)" >> "$log"
+    sleep 60
+    print "$(date '+%Y-%m-%d %H:%M:%S')\tcycle $i\tArm\t$(press Arm)" >> "$log"
+    sleep 120
+  done
+  print "$(date '+%Y-%m-%d %H:%M:%S')\tdone" >> "$log"
+  exit 0
+fi
+
+log=${1:-$folder/soak.log}
+interval=${SOAK_INTERVAL:-300}
+
+if [[ ! -s $log ]]; then
+  print "time\tpid\telapsed\trss_mb\tcpu\tthreads\tfds\tmovs\tfolder_mb\tnewest_min\tfree_gb" >> "$log"
+fi
+
+while true; do
+  now=$(date '+%Y-%m-%d %H:%M')
+  pid=$(pgrep -x OnCue | head -1)
+  movs=$(ls "$folder"/*.mov 2>/dev/null | wc -l | tr -d ' ')
+  folder_mb=$(du -sm "$folder" 2>/dev/null | cut -f1)
+  newest=$(ls -t "$folder"/*.mov 2>/dev/null | head -1)
+  if [[ -n $newest ]]; then
+    newest_min=$(( ($(date +%s) - $(stat -f %m "$newest")) / 60 ))
+  else
+    newest_min=-
+  fi
+  free_gb=$(df -g "$folder" | awk 'NR==2 {print $4}')
+  if [[ -n $pid ]]; then
+    read -r rss cpu etime <<< "$(ps -o rss=,%cpu=,etime= -p "$pid")"
+    threads=$(( $(ps -M -p "$pid" | wc -l) - 1 ))
+    fds=$(lsof -p "$pid" 2>/dev/null | wc -l | tr -d ' ')
+    print "$now\t$pid\t$etime\t$(( rss / 1024 ))\t$cpu\t$threads\t$fds\t$movs\t$folder_mb\t$newest_min\t$free_gb" >> "$log"
+  else
+    print "$now\t-\t-\t-\t-\t-\t-\t$movs\t$folder_mb\t$newest_min\t$free_gb" >> "$log"
+  fi
+  sleep "$interval"
+done

@@ -1,0 +1,6 @@
+Point your Mac's camera at whatever matters.
+Arm it. It counts down, so there's time to stop it.
+It watches for motion and sound, at thresholds you set.
+When something happens, it records. Starting a few seconds before.
+Afterwards, it tells you what happened while you were out.
+Nothing leaves your Mac. No account, no cloud, no network.

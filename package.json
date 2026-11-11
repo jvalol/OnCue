@@ -1,0 +1,15 @@
+{
+  "name": "oncue-web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "@netlify/edge-functions": "^4.0.0",
+    "@netlify/functions": "^6.0.0",
+    "drizzle-orm": "^1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^1.0.0-beta.22",
+    "typescript": "^7.0.2"
+  }
+}

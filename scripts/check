@@ -1,0 +1,30 @@
+#!/bin/sh
+# The gate: copy markers, then a clean build and the unit tests.
+# The Run Script build phase bumps CFBundleVersion on every build, so the gate puts the
+# build number back afterwards; only a build Jake runs moves it.
+set -u
+cd "$(dirname "$0")/.." || exit 2
+
+scripts/ship-check || exit 1
+# The store script's pure parts (spec 0057): a changelog the parser can't read is a release failure.
+python3 scripts/store --self-test || exit 1
+
+plist=OnCue/Info.plist
+build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist")
+restore() { /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist"; }
+trap restore EXIT
+
+derived="${TMPDIR:-/tmp}/oncue-check"
+log="$derived/xcodebuild.log"
+mkdir -p "$derived"
+
+xcodebuild -project OnCue.xcodeproj -scheme OnCue -destination 'platform=macOS' \
+  -derivedDataPath "$derived" CODE_SIGNING_ALLOWED=NO clean test >"$log" 2>&1
+status=$?
+
+grep -E "^/.*(warning|error):|^(warning|error):|Test Case .*failed|Executed [0-9]+ tests" "$log" | sort -u
+if [ $status -ne 0 ]; then
+  echo "check: xcodebuild failed (full log: $log)"
+  exit 1
+fi
+echo "check: clean build, tests pass"

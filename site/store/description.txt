@@ -1,0 +1,21 @@
+OnCue is a security camera on the computer you already own. Point the camera at whatever you want. A door, a desk, or a room. Arm it before you leave, and it will record activity while something is happening, including a settable leading period so you get what triggered it. Not just the aftermath.
+
+Motion, sound, or both. Each trigger has its own meter and its own threshold. Watch the meters move, set the sliders where you want them, and arm it. Either trigger can be switched off on its own.
+
+It starts before it starts. OnCue keeps the last few seconds in memory, so every recording begins before whatever set it off. Five seconds by default, up to thirty.
+
+Two cameras at once. Use the built-in camera and a USB webcam together, each with its own view and its own sensitivity, each recording to its own file. Or one camera. Or none, and let sound alone do the watching.
+
+Recordings you can find. Files go to your Movies folder, or any folder you pick, named for the time they start and the camera and microphone they came from. A size limit keeps them from filling the disk, deleting only OnCue's own oldest recordings and saying so when it does.
+
+It stays awake. While armed, OnCue keeps your computer from sleeping, warns you when closing the lid would stop it, and tells you afterwards if it slept anyway. It says when a recording failed and why, and when motion detection has stopped working, instead of looking fine while nothing records.
+
+It can open at login and arm itself, so it goes back to watching after a restart.
+
+Nothing leaves your computer. No account, no cloud, no network. OnCue has no network permission at all, which you can check yourself with codesign; it can't upload a recording, report usage, or even check for updates itself. The App Store does that.
+
+Recordings stay in the folder you chose until you move them.
+
+Needs macOS 14 or later. macOS asks for camera and microphone permission the first time you open OnCue's menu, since the meters use them.
+
+Made by Jake Van Alstyne: jva.lol. App site: oncue.jva.lol
