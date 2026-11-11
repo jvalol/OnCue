@@ -1,0 +1,33 @@
+/* The site's three typefaces, served from here so that reading a page asks nobody else for
+   anything. These are the Latin subsets as Google Fonts cut them on 2026-11-11, which is every
+   character the pages use. Their licences are in ../font/licences/: Rationale and Montserrat
+   under the SIL Open Font License, Droid Sans under Apache 2.0. */
+
+@font-face {
+  font-family: 'Rationale';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../font/rationale-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Droid Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../font/droid-sans-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Droid Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../font/droid-sans-700.woff2') format('woff2');
+}
+
+/* One variable file covers both weights the pages ask for. */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400 700;
+  src: url('../font/montserrat-400-700.woff2') format('woff2');
+}

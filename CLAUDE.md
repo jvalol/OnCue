@@ -131,6 +131,10 @@ camera, the menu bar, or sleep behaviour.
   catalogs sync fine. A code key added by hand uses plain `%@` and `%lld` specifiers, the way
   Xcode extracts them; a positional `%1$@` key gets marked stale and re-extracted plain the next
   time Xcode builds (2026-09-26). The German value may still use positional specifiers.
+- The site loads nothing from another host. Its fonts are in `site/font` with their licences and
+  `site/stylesheets/fonts.css` names them (2026-11-11, before that Google served them). A page
+  about an app with no network permission shouldn't hand its readers' addresses to a third party,
+  so don't add a CDN link, a hosted font or an embedded widget.
 - Image lookup is case-sensitive: a storyboard or `NSImage(named:)` name must match the asset
   catalog entry exactly (`Preferences`, not `preferences`).
 - Test sources compile the app's files directly into the test target, so tests don't
